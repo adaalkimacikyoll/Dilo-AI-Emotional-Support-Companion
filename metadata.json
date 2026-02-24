@@ -1,0 +1,5 @@
+{
+  "name": "Dilo",
+  "description": "Your AI psychologist and friend, providing a safe space to open up and receive mental health guidance.",
+  "requestFramePermissions": ["microphone"]
+}

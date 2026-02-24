@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Libre Baskerville", serif;
+  --font-display: "Playfair Display", serif;
+  
+  --color-butter-50: #fffdf0;
+  --color-butter-100: #fffbc2;
+  --color-butter-200: #fff785;
+  --color-butter-300: #ffef47;
+  --color-butter-400: #ffe11a;
+  --color-butter-500: #ffd700;
+  --color-butter-600: #e6c200;
+  --color-butter-700: #bfa100;
+  --color-butter-800: #998100;
+  --color-butter-900: #7d6a00;
+
+  --color-olive-butter: #b8a34d;
+  --color-soft-pink: #fff0f3;
+  --color-soft-peach: #fff5eb;
+}
+
+@layer base {
+  body {
+    @apply bg-butter-50 text-stone-800 font-serif;
+  }
+}
+
+.markdown-body {
+  @apply prose prose-stone max-w-none font-serif dark:prose-invert;
+}
+
+.markdown-body p {
+  @apply mb-4 leading-relaxed;
+}
+
+.markdown-body ul {
+  @apply list-disc pl-5 mb-4;
+}
+
+.markdown-body li {
+  @apply mb-1;
+}
