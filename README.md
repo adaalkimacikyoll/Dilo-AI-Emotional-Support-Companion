@@ -6,7 +6,7 @@
 # 🌻 Dilo — Your AI Emotional Support Companion
 > !!!! This is a demo version. The project is still actively being developed.
 
-Dilo is an AI-powered mental wellness chat app designed to make emotional support feel personal, warm, and accessible. Whether you need a friendly conversation or a more reflective, psychologist-style interaction — Dilo adapts to you.
+Dilo is an AI-powered mental wellness chat website designed to make emotional support feel personal, warm, and accessible. Whether you need a friendly conversation or a more reflective, psychologist-style interaction — Dilo adapts to you.
 
 ## Features
 
