@@ -8,7 +8,7 @@
 
 Dilo is an AI-powered mental wellness chat app designed to make emotional 
 support feel personal, warm, and accessible. It adapts its tone and 
-interaction style based on what you need — a friendly conversation or a 
+interaction style based on what you need a friendly conversation or a 
 more reflective, psychologist-style space.
 
 ## Features
@@ -66,7 +66,7 @@ Get a free Gemini API key at [aistudio.google.com](https://aistudio.google.com)
 
 ## The Story Behind It
 
-Dilo's name comes from my cousin **Dilvin** — a psychology student who has 
+Dilo's name comes from my cousin **Dilvin** , a psychology student who has 
 always shown up for the people around her, especially on hard days. Her 
 empathy and patience inspired every design decision in this app. I wanted 
 to build something that carries even a small piece of what she naturally 
