@@ -518,10 +518,12 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
 
       {view === "chat" && (
         <footer className="border-t border-line bg-paper">
-          <div className="mx-auto max-w-7xl px-4 pb-3 pt-2.5">
+          <div className="mx-auto max-w-7xl px-4 pb-2 pt-2">
             <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null || !modelReady} />
-            <p className="mt-2 text-center text-xs text-muted">{t.disclaimer}</p>
-            <LegalLinks t={t} onOpen={onOpenLegal} className="mt-1" />
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-muted">
+              <p className="text-center">{t.disclaimer}</p>
+              <LegalLinks t={t} onOpen={onOpenLegal} className="text-[11px]" />
+            </div>
           </div>
         </footer>
       )}

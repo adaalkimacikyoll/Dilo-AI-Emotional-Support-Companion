@@ -27,7 +27,7 @@ export function Composer({ t, value, onChange, onSend, disabled }: Props) {
 
   return (
     <div>
-      <div className="flex items-end gap-2 rounded-xl border border-line bg-surface p-1.5 shadow-sm focus-within:border-moss/60">
+      <div className="flex items-end gap-2 rounded-xl border border-line bg-surface p-1 shadow-sm focus-within:border-moss/60">
         <label htmlFor="composer" className="sr-only">
           {t.inputPlaceholder}
         </label>
@@ -45,7 +45,7 @@ export function Composer({ t, value, onChange, onSend, disabled }: Props) {
             }
           }}
           placeholder={t.inputPlaceholder}
-          className="max-h-36 min-h-8 flex-1 resize-none bg-transparent px-2.5 py-1 text-[15px] leading-6 text-ink placeholder:text-muted focus:outline-none"
+          className="max-h-32 min-h-8 flex-1 resize-none bg-transparent px-2.5 py-1 text-sm leading-6 text-ink placeholder:text-muted focus:outline-none"
         />
         <button
           type="button"
