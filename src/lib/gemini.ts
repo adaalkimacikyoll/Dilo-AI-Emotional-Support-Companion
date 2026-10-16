@@ -1,69 +1,125 @@
 import { GoogleGenAI } from "@google/genai";
+import type { LanguageCode } from "./translations";
 
-const apiKey = process.env.GEMINI_API_KEY || "AIzaSyAmvPIGWDu1KRy3djvY8ooNHKHzXS2EF2k";
-const genAI = new GoogleGenAI({ apiKey });
+export type Mode = "friendly" | "reflective";
 
-export const LANGUAGES = [
-  { code: "en", name: "English" },
-  { code: "tr", name: "Türkçe" },
-  { code: "de", name: "Deutsch" },
-  { code: "fr", name: "Français" },
-  { code: "es", name: "Español" },
-  { code: "ar", name: "العربية" },
-  { code: "fa", name: "فارسی" },
+export interface ChatTurn {
+  role: "user" | "model";
+  text: string;
+}
+
+export type ChatErrorKind = "missing_key" | "invalid_key" | "quota" | "network" | "unknown";
+
+export class ChatError extends Error {
+  constructor(public kind: ChatErrorKind, message?: string) {
+    super(message ?? kind);
+  }
+}
+
+// The key is injected at build time from .env.local (see vite.config.ts).
+// Never hardcode a key here: anything in this file ships to the browser.
+const API_KEY = process.env.GEMINI_API_KEY || "";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
+
+/** Max number of past turns sent to the model, to keep latency and cost predictable. */
+const MAX_HISTORY_TURNS = 30;
+
+/** The model starts its reply with this marker when it detects a risk situation. */
+export const CRISIS_MARKER = "[CRISIS]";
+
+export const LANGUAGES: { code: LanguageCode; name: string; englishName: string; speechLocale: string; rtl: boolean }[] = [
+  { code: "en", name: "English", englishName: "English", speechLocale: "en-US", rtl: false },
+  { code: "tr", name: "Türkçe", englishName: "Turkish", speechLocale: "tr-TR", rtl: false },
+  { code: "de", name: "Deutsch", englishName: "German", speechLocale: "de-DE", rtl: false },
+  { code: "fr", name: "Français", englishName: "French", speechLocale: "fr-FR", rtl: false },
+  { code: "es", name: "Español", englishName: "Spanish", speechLocale: "es-ES", rtl: false },
+  { code: "ar", name: "العربية", englishName: "Arabic", speechLocale: "ar-SA", rtl: true },
+  { code: "fa", name: "فارسی", englishName: "Persian", speechLocale: "fa-IR", rtl: true },
 ];
 
-export const getSystemInstruction = (language: string, mode: "friendly" | "psychologist" = "friendly") => {
-  const modeInstruction = mode === "friendly" 
-    ? "You are Dilo, a casual, warm, and supportive conversational assistant. Your tone is friendly, relaxed, and approachable, like a close friend who is always there to listen."
-    : "You are Dilo, providing empathetic, reflective, and professionally-toned mental wellness support. Your tone is professional yet caring, focusing on active listening, reflection, and therapeutic support.";
+export const getLanguage = (code: string) => LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 
-  return `${modeInstruction}
-
-Your goal is to provide mental health support, follow the user's emotional state, and offer personalized recommendations for activities, food, and self-care.
-
-Current Language: ${language}
-Always respond in the selected language.
-
-Guidelines:
-1. Listen actively and validate feelings.
-2. If the user seems to be in a crisis, gently suggest professional help while remaining supportive.
-3. Provide actionable recommendations (e.g., "Maybe a warm chamomile tea would help?" or "How about a 5-minute walk in the park?").
-4. Keep track of the conversation context to follow their mental health progress.
-5. Use formatting (bullet points, bold text) to make recommendations clear.`;
+const MODE_INSTRUCTIONS: Record<Mode, string> = {
+  friendly: `Mode: Friendly.
+Talk like a warm, grounded friend: casual, plain language, short paragraphs. Listen first, reflect back what you heard, and only then offer an idea or two if it seems welcome.`,
+  reflective: `Mode: Reflective.
+Use a calm, structured, counselling-informed style. Use open questions, reflective listening and gentle summaries, and help the user notice thoughts, feelings and needs. You may draw on well-established, low-risk self-help techniques (for example paced breathing, grounding, cognitive reframing, behavioural activation, journaling) and name them plainly. You are not a psychologist or therapist and must never claim to be one, diagnose, or suggest medication.`,
 };
 
-export const MODELS = [
-  { id: "gemini-3-flash-preview", name: "Gemini 3 Flash" },
-  { id: "gemini-3.1-pro-preview", name: "Gemini 3.1 Pro" },
-  { id: "gemini-2.5-flash-latest", name: "Gemini 2.5 Flash" },
-];
+export function getSystemInstruction(language: LanguageCode, mode: Mode, moodLabel: string | null) {
+  const lang = getLanguage(language);
+  return `You are Dilo, an AI emotional support companion. You are an AI, not a human and not a licensed mental health professional. If asked, say so honestly.
+
+${MODE_INSTRUCTIONS[mode]}
+
+Language: always reply in ${lang.englishName}, even if the user writes in another language, unless they explicitly ask you to switch.
+${moodLabel ? `\nThe user has marked their current mood as: ${moodLabel}. Take this into account, but don't assume it explains everything.\n` : ""}
+Style:
+- Validate feelings without exaggerating or minimising them. Avoid clichés and toxic positivity.
+- Keep replies focused: usually 2 to 5 short paragraphs or a short list. Ask at most one question per reply.
+- Offer concrete, realistic suggestions (activities, rest, food and drink, connecting with people) only when they fit what the user said.
+- Use Markdown sparingly (short lists, occasional bold). Do not use emojis.
+- Don't give medical, legal or medication advice; for persistent or worsening difficulties, encourage talking to a doctor, counsellor or psychotherapist.
+
+Safety (highest priority):
+- If the user mentions suicidal thoughts, self-harm, wanting to die, being in danger from someone else, intending to harm someone, or a medical emergency, start your reply with the exact text ${CRISIS_MARKER} on its own line. The app will then show local crisis lines next to your message.
+- In that case, respond with care, take it seriously, ask directly whether they are safe right now, and encourage them to contact emergency services or a crisis line, or a trusted person nearby. Do not provide any information about methods of self-harm.
+- Never use the marker in any other situation.`;
+}
+
+function toContents(history: ChatTurn[]) {
+  const recent = history.slice(-MAX_HISTORY_TURNS);
+  // Gemini expects the conversation to begin with a user turn.
+  const firstUser = recent.findIndex((m) => m.role === "user");
+  return recent.slice(firstUser === -1 ? recent.length : firstUser).map((m) => ({
+    role: m.role,
+    parts: [{ text: m.text }],
+  }));
+}
+
+function classifyError(error: unknown): ChatErrorKind {
+  const status = (error as { status?: number })?.status;
+  const message = String((error as { message?: string })?.message ?? error).toLowerCase();
+  if (status === 401 || status === 403 || message.includes("api key not valid") || message.includes("permission")) return "invalid_key";
+  if (status === 429 || message.includes("quota") || message.includes("resource_exhausted") || message.includes("credit")) return "quota";
+  if (message.includes("failed to fetch") || message.includes("network")) return "network";
+  return "unknown";
+}
+
+let client: GoogleGenAI | null = null;
+
+export interface DiloReply {
+  text: string;
+  crisis: boolean;
+}
 
 export async function chatWithDilo(
-  messages: { role: "user" | "model"; parts: { text: string }[] }[], 
-  language: string,
-  modelId: string = "gemini-3-flash-preview",
-  mode: "friendly" | "psychologist" = "friendly"
-) {
-  const genAI = new GoogleGenAI({ apiKey });
-  const model = modelId;
-  
+  history: ChatTurn[],
+  language: LanguageCode,
+  mode: Mode,
+  moodLabel: string | null,
+): Promise<DiloReply> {
+  if (!API_KEY) throw new ChatError("missing_key");
+  client ??= new GoogleGenAI({ apiKey: API_KEY });
+
   try {
-    const response = await genAI.models.generateContent({
-      model,
-      contents: messages,
+    const response = await client.models.generateContent({
+      model: MODEL,
+      contents: toContents(history),
       config: {
-        systemInstruction: getSystemInstruction(language, mode),
-        temperature: 0.7,
+        systemInstruction: getSystemInstruction(language, mode, moodLabel),
+        temperature: mode === "reflective" ? 0.5 : 0.7,
       },
     });
 
-    return response.text;
-  } catch (error: any) {
-    console.error("Error chatting with Dilo:", error);
-    if (error?.message?.includes("credit balance")) {
-      return "⚠️ Your credit balance is too low to access this model. Please switch to a free model or check your billing.";
-    }
-    return "I'm sorry, I'm having a bit of trouble connecting right now. Can we try again in a moment, friend?";
+    let text = (response.text ?? "").trim();
+    const crisis = text.startsWith(CRISIS_MARKER);
+    if (crisis) text = text.slice(CRISIS_MARKER.length).trim();
+    if (!text) throw new ChatError("unknown", "Empty response");
+    return { text, crisis };
+  } catch (error) {
+    if (error instanceof ChatError) throw error;
+    console.error("Dilo request failed:", error);
+    throw new ChatError(classifyError(error));
   }
 }
