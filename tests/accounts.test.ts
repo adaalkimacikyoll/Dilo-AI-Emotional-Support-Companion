@@ -95,3 +95,17 @@ describe("device accounts", () => {
     expect(again.vault).toEqual({ conversations: [], activeId: null, entries: [], notes: [], mood: null });
   });
 });
+
+import { isStrongPassword, passwordChecks } from "../src/lib/lock";
+
+describe("password rules", () => {
+  it("needs 8+ characters, a number and a special character", () => {
+    expect(isStrongPassword("Sunny!2026")).toBe(true);
+    expect(isStrongPassword("Gün3ş!ab")).toBe(true);
+    expect(isStrongPassword("secret1")).toBe(false);
+    expect(isStrongPassword("longpassword!")).toBe(false);
+    expect(isStrongPassword("longpassword1")).toBe(false);
+    expect(isStrongPassword("ab1!")).toBe(false);
+    expect(passwordChecks("ğüşöçıİĞ1")).toEqual({ length: true, number: true, special: false });
+  });
+});

@@ -12,7 +12,18 @@ export interface LockedPayload {
 }
 
 const ITERATIONS = 310_000;
-export const MIN_PASSWORD_LENGTH = 4;
+export const MIN_PASSWORD_LENGTH = 8;
+
+/** Rules for new passwords (accounts and locked conversations). Letters in any alphabet count as letters, not special characters. */
+export function passwordChecks(password: string) {
+  return {
+    length: [...password].length >= MIN_PASSWORD_LENGTH,
+    number: /\p{N}/u.test(password),
+    special: /[^\p{L}\p{N}\s]/u.test(password),
+  };
+}
+
+export const isStrongPassword = (password: string) => Object.values(passwordChecks(password)).every(Boolean);
 
 const toBase64 = (bytes: Uint8Array) => {
   let binary = "";
