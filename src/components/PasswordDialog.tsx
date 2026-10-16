@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Lock } from "lucide-react";
 import { Dialog } from "./Dialog";
-import { MIN_PASSWORD_LENGTH, WrongPasswordError } from "../lib/lock";
+import { isStrongPassword, WrongPasswordError } from "../lib/lock";
+import { PasswordRules } from "./PasswordRules";
 import type { Strings } from "../lib/translations";
 
 interface Props {
@@ -32,7 +33,7 @@ export function PasswordDialog({ t, open, mode, dir, onClose, onSubmit }: Props)
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (mode === "set") {
-      if (password.length < MIN_PASSWORD_LENGTH) return setError(t.passwordTooShort);
+      if (!isStrongPassword(password)) return setError(t.passwordTooShort);
       if (password !== repeat) return setError(t.passwordMismatch);
     }
     setBusy(true);
@@ -64,8 +65,10 @@ export function PasswordDialog({ t, open, mode, dir, onClose, onSubmit }: Props)
             autoComplete={mode === "set" ? "new-password" : "current-password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            aria-describedby={mode === "set" ? "lock-password-rules" : undefined}
             className={inputClass}
           />
+          {mode === "set" && <PasswordRules id="lock-password-rules" t={t} password={password} />}
         </div>
 
         {mode === "set" && (

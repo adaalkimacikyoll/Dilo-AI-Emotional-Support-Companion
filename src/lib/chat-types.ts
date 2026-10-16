@@ -31,9 +31,10 @@ export type ChatErrorKind = "not_configured" | "rate_limited" | "bad_request" | 
 export const LIMITS = {
   /** Requests with more turns than this are rejected by the server. */
   maxTurns: 40,
-  maxCharsPerTurn: 4000,
+  /** Dilo's in-depth replies can be long; the message box itself is capped at 4000. */
+  maxCharsPerTurn: 8000,
   /** History budget per request, to keep replies fast and cheap. */
-  maxTotalChars: 16000,
+  maxTotalChars: 40000,
   contextTurns: 20,
-  maxReplyTokens: 700,
+  maxReplyTokens: 1600,
 };

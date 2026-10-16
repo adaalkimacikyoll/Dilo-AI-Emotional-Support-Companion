@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { LockKeyhole } from "lucide-react";
 import { createAccount, listAccounts, NameTakenError, signIn, WrongPasswordError, type Session } from "../lib/accounts";
 import { LANGUAGES } from "../lib/api";
-import { MIN_PASSWORD_LENGTH } from "../lib/lock";
+import { isStrongPassword } from "../lib/lock";
+import { PasswordRules } from "./PasswordRules";
 import type { LegalPage } from "../lib/legal";
 import type { LanguageCode, Strings } from "../lib/translations";
 import { LegalLinks } from "./LegalDialog";
@@ -37,7 +38,7 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
     e.preventDefault();
     if (!name.trim()) return setError(t.nameRequired);
     if (mode === "create") {
-      if (password.length < MIN_PASSWORD_LENGTH) return setError(t.passwordTooShort);
+      if (!isStrongPassword(password)) return setError(t.passwordTooShort);
       if (password !== repeat) return setError(t.passwordMismatch);
     }
     setBusy(true);
@@ -103,8 +104,10 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
               autoComplete={mode === "create" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              aria-describedby={mode === "create" ? "account-password-rules" : undefined}
               className={input}
             />
+            {mode === "create" && <PasswordRules id="account-password-rules" t={t} password={password} />}
           </div>
 
           {mode === "create" && (
