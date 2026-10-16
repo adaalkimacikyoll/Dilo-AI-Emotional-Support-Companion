@@ -336,7 +336,7 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
   return (
     <div dir={dir} className="flex h-dvh flex-col bg-paper text-ink">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4">
           <div className="flex items-center gap-3 sm:gap-5">
             <button type="button" onClick={startNewConversation} className="flex items-center gap-2.5" aria-label={t.newChat}>
               <Logo className="h-8 w-8" />
@@ -390,7 +390,7 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
       </header>
 
       <main className="flex-1 overflow-y-auto" aria-live={view === "chat" ? "polite" : undefined}>
-        <div className="mx-auto max-w-3xl px-4 py-8">
+        <div className="mx-auto max-w-7xl px-4 py-8">
           {view === "journal" ? (
             <JournalView
               t={t}
@@ -494,7 +494,7 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
 
       {view === "chat" && (
         <footer className="border-t border-line bg-paper">
-          <div className="mx-auto max-w-3xl px-4 pb-4 pt-3">
+          <div className="mx-auto max-w-7xl px-4 pb-4 pt-3">
             <div className="mb-2 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <ModeSwitch t={t} mode={mode} onChange={setMode} />
