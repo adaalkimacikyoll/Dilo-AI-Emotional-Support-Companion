@@ -5,14 +5,9 @@ import { Logo } from "./Logo";
 import { CrisisResources } from "./CrisisResources";
 import type { LanguageCode, Strings } from "../lib/translations";
 import type { TextSize } from "./SettingsPanel";
+import type { StoredMessage } from "../lib/journal";
 
-export interface Message {
-  id: string;
-  role: "user" | "model";
-  text: string;
-  timestamp: number;
-  crisis?: boolean;
-}
+export type Message = StoredMessage;
 
 const SIZE: Record<TextSize, string> = {
   small: "text-[15px]",

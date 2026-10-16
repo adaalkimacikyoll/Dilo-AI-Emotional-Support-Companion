@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 
 /** useState backed by localStorage. Falls back to memory if storage is unavailable. */
-export function usePersistentState<T>(key: string, initial: T, validate?: (value: unknown) => value is T) {
+export function usePersistentState<T>(key: string, initialValue: T | (() => T), validate?: (value: unknown) => value is T) {
   const [value, setValue] = useState<T>(() => {
+    const initial = () => (typeof initialValue === "function" ? (initialValue as () => T)() : initialValue);
     try {
       const raw = localStorage.getItem(key);
-      if (raw === null) return initial;
+      if (raw === null) return initial();
       const parsed = JSON.parse(raw);
-      return validate && !validate(parsed) ? initial : (parsed as T);
+      return validate && !validate(parsed) ? initial() : (parsed as T);
     } catch {
-      return initial;
+      return initial();
     }
   });
 
