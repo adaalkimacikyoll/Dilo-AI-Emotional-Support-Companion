@@ -1,6 +1,6 @@
 import { LIMITS, type ChatErrorKind, type ChatRequest, type ChatResponse, type ChatTurn, type LanguageCode } from "../../shared/chat-types";
 
-export type { ChatErrorKind, Mode } from "../../shared/chat-types";
+export type { ChatErrorKind, Mode, SupportStyle } from "../../shared/chat-types";
 
 export class ChatError extends Error {
   constructor(public kind: ChatErrorKind) {

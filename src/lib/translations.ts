@@ -97,6 +97,11 @@ export interface Strings {
   removeLock: string;
   readOnlyNote: string;
   working: string;
+  supportLabel: string;
+  listenOnly: string;
+  giveTips: string;
+  listenHint: string;
+  tipsHint: string;
   errors: Record<ChatErrorKind, string>;
   quickSuggestions: string[];
   moods: Record<MoodId, string>;
@@ -198,6 +203,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "Remove lock",
     readOnlyNote: "This conversation is locked. Remove the lock to continue it.",
     working: "One moment",
+    supportLabel: "What do you need right now?",
+    listenOnly: "Just listen",
+    giveTips: "Listen and give tips",
+    listenHint: "Dilo listens and reflects without giving advice",
+    tipsHint: "Dilo listens and also suggests things that might help",
     errors: {
       missing_key: "Dilo isn't connected yet. Set GEMINI_API_KEY in the Vercel project settings (or .env.local when running locally).",
       invalid_key: "The Gemini API key was rejected. Check GEMINI_API_KEY in the server settings.",
@@ -343,6 +353,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "Kilidi kaldır",
     readOnlyNote: "Bu sohbet kilitli. Devam etmek için kilidi kaldır.",
     working: "Bir saniye",
+    supportLabel: "Şu an neye ihtiyacın var?",
+    listenOnly: "Sadece dinle",
+    giveTips: "Dinle ve tavsiye ver",
+    listenHint: "Dilo tavsiye vermeden dinler ve anladığını yansıtır",
+    tipsHint: "Dilo dinler ve iyi gelebilecek şeyler de önerir",
     errors: {
       missing_key: "Dilo henüz bağlı değil. Vercel proje ayarlarına (yerelde .env.local dosyasına) GEMINI_API_KEY ekle.",
       invalid_key: "Gemini API anahtarı reddedildi. Sunucu ayarlarındaki GEMINI_API_KEY değerini kontrol et.",
@@ -488,6 +503,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "Sperre aufheben",
     readOnlyNote: "Dieses Gespräch ist gesperrt. Hebe die Sperre auf, um es fortzusetzen.",
     working: "Einen Moment",
+    supportLabel: "Was brauchst du gerade?",
+    listenOnly: "Nur zuhören",
+    giveTips: "Zuhören und Tipps geben",
+    listenHint: "Dilo hört zu und spiegelt, ohne Ratschläge zu geben",
+    tipsHint: "Dilo hört zu und schlägt auch Dinge vor, die helfen könnten",
     errors: {
       missing_key: "Dilo ist noch nicht verbunden. Setze GEMINI_API_KEY in den Vercel-Projekteinstellungen (lokal in .env.local).",
       invalid_key: "Der Gemini-API-Schlüssel wurde abgelehnt. Prüfe GEMINI_API_KEY in den Server-Einstellungen.",
@@ -633,6 +653,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "Retirer le verrou",
     readOnlyNote: "Cette conversation est verrouillée. Retirez le verrou pour la poursuivre.",
     working: "Un instant",
+    supportLabel: "De quoi avez-vous besoin maintenant ?",
+    listenOnly: "Juste écouter",
+    giveTips: "Écouter et conseiller",
+    listenHint: "Dilo écoute et reformule sans donner de conseils",
+    tipsHint: "Dilo écoute et propose aussi des pistes qui pourraient aider",
     errors: {
       missing_key: "Dilo n'est pas encore connecté. Définissez GEMINI_API_KEY dans les paramètres du projet Vercel (ou .env.local en local).",
       invalid_key: "La clé API Gemini a été refusée. Vérifiez GEMINI_API_KEY dans les paramètres du serveur.",
@@ -778,6 +803,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "Quitar bloqueo",
     readOnlyNote: "Esta conversación está bloqueada. Quita el bloqueo para continuarla.",
     working: "Un momento",
+    supportLabel: "¿Qué necesitas ahora?",
+    listenOnly: "Solo escuchar",
+    giveTips: "Escuchar y aconsejar",
+    listenHint: "Dilo escucha y refleja lo que dices sin dar consejos",
+    tipsHint: "Dilo escucha y también sugiere cosas que podrían ayudarte",
     errors: {
       missing_key: "Dilo aún no está conectado. Define GEMINI_API_KEY en los ajustes del proyecto de Vercel (o en .env.local en local).",
       invalid_key: "La clave de la API de Gemini fue rechazada. Revisa GEMINI_API_KEY en los ajustes del servidor.",
@@ -923,6 +953,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "إزالة القفل",
     readOnlyNote: "هذه المحادثة مقفلة. أزل القفل لمتابعتها.",
     working: "لحظة",
+    supportLabel: "ما الذي تحتاجه الآن؟",
+    listenOnly: "استمع فقط",
+    giveTips: "استمع وقدّم نصائح",
+    listenHint: "يستمع ديلو ويعكس ما تقوله دون تقديم نصائح",
+    tipsHint: "يستمع ديلو ويقترح أيضًا أشياء قد تساعدك",
     errors: {
       missing_key: "ديلو غير متصل بعد. أضف GEMINI_API_KEY في إعدادات مشروع Vercel (أو في ‎.env.local محليًا).",
       invalid_key: "تم رفض مفتاح Gemini API. تحقّق من GEMINI_API_KEY في إعدادات الخادم.",
@@ -1068,6 +1103,11 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     removeLock: "برداشتن قفل",
     readOnlyNote: "این گفتگو قفل است. برای ادامه، قفل را بردار.",
     working: "یک لحظه",
+    supportLabel: "الان به چه چیزی نیاز داری؟",
+    listenOnly: "فقط گوش بده",
+    giveTips: "گوش بده و پیشنهاد بده",
+    listenHint: "دیلو بدون نصیحت گوش می‌دهد و حرفت را بازتاب می‌دهد",
+    tipsHint: "دیلو گوش می‌دهد و چیزهایی که شاید کمک کنند هم پیشنهاد می‌دهد",
     errors: {
       missing_key: "دیلو هنوز متصل نیست. GEMINI_API_KEY را در تنظیمات پروژه Vercel (یا ‎.env.local در اجرای محلی) قرار بده.",
       invalid_key: "کلید Gemini API پذیرفته نشد. GEMINI_API_KEY را در تنظیمات سرور بررسی کن.",

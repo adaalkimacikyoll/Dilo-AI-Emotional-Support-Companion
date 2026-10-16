@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal } from "lucide-react";
 import { cn } from "./lib/utils";
-import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode } from "./lib/api";
+import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
 import { TRANSLATIONS, type LanguageCode, type MoodId, type Strings } from "./lib/translations";
 import { isMoodId } from "./lib/moods";
 import { playReplyChime } from "./lib/sound";
@@ -31,11 +31,13 @@ import { CrisisResources } from "./components/CrisisResources";
 import { ChatMessage } from "./components/ChatMessage";
 import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
+import { SupportToggle } from "./components/SupportToggle";
 
 type View = "chat" | "journal";
 
 const isLanguage = (v: unknown): v is LanguageCode => LANGUAGES.some((l) => l.code === v);
 const isMode = (v: unknown): v is Mode => v === "friendly" || v === "reflective";
+const isSupport = (v: unknown): v is SupportStyle => v === "listen" || v === "tips";
 const isTheme = (v: unknown): v is Theme => v === "light" || v === "dark" || v === "system";
 const isTextSize = (v: unknown): v is TextSize => v === "small" || v === "medium" || v === "large";
 const isMoodOrNull = (v: unknown): v is MoodId | null => v === null || isMoodId(v);
@@ -71,6 +73,7 @@ function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (
 export default function App() {
   const [language, setLanguage] = usePersistentState<LanguageCode>("dilo.language", browserLanguage, isLanguage);
   const [mode, setMode] = usePersistentState<Mode>("dilo.mode", "friendly", isMode);
+  const [support, setSupport] = usePersistentState<SupportStyle>("dilo.support", "tips", isSupport);
   const [mood, setMood] = usePersistentState<MoodId | null>("dilo.mood", null, isMoodOrNull);
   const [theme, setTheme] = usePersistentState<Theme>("dilo.theme", "system", isTheme);
   const [textSize, setTextSize] = usePersistentState<TextSize>("dilo.textSize", "medium", isTextSize);
@@ -168,6 +171,7 @@ export default function App() {
           history: history.map((m) => ({ role: m.role, text: m.text })),
           language,
           mode,
+          support,
           mood,
         });
         appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis, timestamp: Date.now() });
@@ -178,7 +182,7 @@ export default function App() {
         setLoadingFor(null);
       }
     },
-    [language, mode, mood, sound, appendMessage],
+    [language, mode, support, mood, sound, appendMessage],
   );
 
   const send = (textOverride?: string) => {
@@ -392,6 +396,7 @@ export default function App() {
       {view === "chat" && (
         <footer className="border-t border-line bg-paper">
           <div className="mx-auto max-w-3xl px-4 pb-4 pt-3">
+            <SupportToggle t={t} value={support} onChange={setSupport} />
             <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null} speechLocale={lang.speechLocale} />
             <p className="mt-2 text-center text-xs text-muted">{t.disclaimer}</p>
           </div>

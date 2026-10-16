@@ -9,6 +9,10 @@ export type MoodId = (typeof MOOD_IDS)[number];
 export const MODES = ["friendly", "reflective"] as const;
 export type Mode = (typeof MODES)[number];
 
+/** Whether Dilo only listens or also offers suggestions. */
+export const SUPPORT_STYLES = ["listen", "tips"] as const;
+export type SupportStyle = (typeof SUPPORT_STYLES)[number];
+
 export interface ChatTurn {
   role: "user" | "model";
   text: string;
@@ -18,6 +22,7 @@ export interface ChatRequest {
   history: ChatTurn[];
   language: LanguageCode;
   mode: Mode;
+  support: SupportStyle;
   mood: MoodId | null;
 }
 
