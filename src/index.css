@@ -1,46 +1,118 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Newsreader:opsz,wght@6..72,400..600&family=Vazirmatn:wght@400..700&display=swap");
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Libre Baskerville", serif;
-  --font-display: "Playfair Display", serif;
-  
-  --color-butter-50: #fffdf0;
-  --color-butter-100: #fffbc2;
-  --color-butter-200: #fff785;
-  --color-butter-300: #ffef47;
-  --color-butter-400: #ffe11a;
-  --color-butter-500: #ffd700;
-  --color-butter-600: #e6c200;
-  --color-butter-700: #bfa100;
-  --color-butter-800: #998100;
-  --color-butter-900: #7d6a00;
+/* Dark mode follows the .dark class on <html>, set from the theme preference. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-  --color-olive-butter: #b8a34d;
-  --color-soft-pink: #fff0f3;
-  --color-soft-peach: #fff5eb;
+@theme {
+  /* Instrument Sans for the interface, Newsreader for Dilo's voice.
+     Vazirmatn covers Arabic and Persian glyphs in both. */
+  --font-sans: "Instrument Sans", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader", "Vazirmatn", ui-serif, Georgia, serif;
+
+  /* Light palette */
+  --color-paper: #f6f6f1;
+  --color-surface: #ffffff;
+  --color-ink: #1d2420;
+  --color-muted: #5f6a63;
+  --color-line: #dfe3db;
+  --color-moss: #3c5a48;
+  --color-moss-soft: #e6ece5;
+  --color-sun: #e2ad32;
+  --color-alert: #a3402e;
+  --color-alert-soft: #f8ebe7;
 }
 
 @layer base {
+  .dark {
+    --color-paper: #131714;
+    --color-surface: #1b201c;
+    --color-ink: #e6eae4;
+    --color-muted: #9aa59d;
+    --color-line: #2c332e;
+    --color-moss: #9cc3a9;
+    --color-moss-soft: #223027;
+    --color-sun: #e8bc4f;
+    --color-alert: #ec9a87;
+    --color-alert-soft: #35211c;
+  }
+
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-butter-50 text-stone-800 font-serif;
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-moss);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-.markdown-body {
-  @apply prose prose-stone max-w-none font-serif dark:prose-invert;
+/* Dilo's replies: serif, generous leading, restrained Markdown. */
+.dilo-prose {
+  @apply font-serif text-ink;
+  line-height: 1.65;
+}
+.dilo-prose p {
+  margin: 0 0 0.85em;
+}
+.dilo-prose p:last-child,
+.dilo-prose ul:last-child,
+.dilo-prose ol:last-child {
+  margin-bottom: 0;
+}
+.dilo-prose ul,
+.dilo-prose ol {
+  margin: 0 0 0.85em;
+  padding-inline-start: 1.25em;
+}
+.dilo-prose ul {
+  list-style: disc;
+}
+.dilo-prose ol {
+  list-style: decimal;
+}
+.dilo-prose li {
+  margin-bottom: 0.3em;
+}
+.dilo-prose li::marker {
+  color: var(--color-muted);
+}
+.dilo-prose strong {
+  font-weight: 600;
+}
+.dilo-prose a {
+  color: var(--color-moss);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.markdown-body p {
-  @apply mb-4 leading-relaxed;
+.typing-dot {
+  animation: typing 1.2s infinite ease-in-out;
 }
-
-.markdown-body ul {
-  @apply list-disc pl-5 mb-4;
-}
-
-.markdown-body li {
-  @apply mb-1;
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
 }

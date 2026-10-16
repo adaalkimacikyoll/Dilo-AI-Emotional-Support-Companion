@@ -1,5 +1,7 @@
 {
   "name": "Dilo",
-  "description": "Your AI psychologist and friend, providing a safe space to open up and receive mental health guidance.",
-  "requestFramePermissions": ["microphone"]
+  "description": "An AI emotional support companion that listens without judgement, adapts to your mood and points you to real help when you need it.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
 }
