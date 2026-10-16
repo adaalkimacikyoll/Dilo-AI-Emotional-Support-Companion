@@ -440,7 +440,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
         </div>
       </header>
 
-      <main className="flex-1" aria-live={view === "chat" ? "polite" : undefined}>
+      <main className="relative flex-1" aria-live={view === "chat" ? "polite" : undefined}>
         <div className="mx-auto max-w-7xl px-4 py-8">
           {view === "journal" ? (
             <JournalView
