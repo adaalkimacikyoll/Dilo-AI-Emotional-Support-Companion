@@ -1,5 +1,5 @@
 import { LEGAL_LAST_UPDATED, OPERATOR } from "./operator";
-import { MODEL } from "./api";
+import { AI_PROVIDER } from "./api";
 
 /**
  * Legal texts for Germany / the EU. These are carefully written templates, not legal advice:
@@ -41,17 +41,17 @@ E-Mail: ${OPERATOR.email}
 ## 2. Das Wichtigste in Kürze
 
 - Dilo hat **keine Cookies, kein Tracking und keine Analyse-Tools**. Konten existieren nur verschlüsselt auf deinem Gerät, nicht bei uns.
-- Die KI läuft **vollständig auf deinem Gerät**. Deine Nachrichten, Tagebucheinträge und Notizen werden **nicht an uns oder Dritte übertragen**. Wir haben keinen Zugriff darauf.
-- Personenbezogene Daten fallen bei uns nur in technisch notwendigem Umfang beim Abrufen der Website an (Server-Logdateien beim Hoster).
-- Einmalig wird das KI-Modell von Hugging Face heruntergeladen, und zwar erst, nachdem du dies ausdrücklich auslöst.
+- Deine Nachrichten an Dilo werden **nur zur Erstellung der Antwort** an einen KI-Dienst in der EU (Scaleway, Paris) übertragen und dort **nicht zum Training verwendet**. Wir selbst speichern deine Nachrichten nicht.
+- Tagebucheinträge und Notizen verlassen **nie** dein Gerät.
+- Darüber hinaus fallen personenbezogene Daten nur in technisch notwendigem Umfang an (Server-Logdateien beim Hoster).
 
 ## 3. Hosting
 
-Diese Website wird bei Vercel Inc. (USA) gehostet. Beim Aufruf der Website verarbeitet der Hoster technisch notwendige Daten (IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, Browsertyp, Referrer) in Server-Logdateien, um die Website auszuliefern und ihre Sicherheit zu gewährleisten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt in der sicheren und stabilen Bereitstellung der Website. Mit Vercel besteht ein Vertrag zur Auftragsverarbeitung. Eine Übermittlung in die USA erfolgt auf Grundlage des EU-US Data Privacy Framework bzw. der EU-Standardvertragsklauseln.
+Diese Website und ihre Server-Funktion werden bei Vercel Inc. (USA) gehostet; die Server-Funktion läuft in der Region Frankfurt (EU). Beim Aufruf der Website verarbeitet der Hoster technisch notwendige Daten (IP-Adresse, Datum und Uhrzeit, aufgerufene Adresse, Browsertyp, Referrer) in Server-Logdateien, um die Website auszuliefern und ihre Sicherheit zu gewährleisten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO; unser berechtigtes Interesse liegt in der sicheren und stabilen Bereitstellung der Website. Mit Vercel besteht ein Vertrag zur Auftragsverarbeitung. Eine Übermittlung in die USA erfolgt auf Grundlage des EU-US Data Privacy Framework bzw. der EU-Standardvertragsklauseln.
 
 ## 4. Speicherung auf deinem Gerät
 
-Dilo speichert folgende Daten ausschließlich lokal in deinem Browser (Local Storage und Cache Storage): dein Konto mit Gesprächen, Tagebucheinträgen, Notizen und Stimmung (verschlüsselt), Einstellungen, deine Einwilligung (mit Zeitpunkt und Version) sowie die Dateien des KI-Modells. Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Da deine Inhalte Angaben zu deiner Gesundheit enthalten können, erfolgt ihre Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).
+Dilo speichert folgende Daten ausschließlich lokal in deinem Browser (Local Storage): dein Konto mit Gesprächen, Tagebucheinträgen, Notizen und Stimmung (verschlüsselt), Einstellungen, deine Einwilligung (mit Zeitpunkt und Version). Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Da deine Inhalte Angaben zu deiner Gesundheit enthalten können, erfolgt ihre Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).
 
 Deine Inhalte (Gespräche, Tagebucheinträge, Notizen und Stimmung) werden in einem Konto gespeichert, das nur auf diesem Gerät existiert. Im Klartext gespeichert werden lediglich der von dir gewählte Kontoname und technische Werte (Salt). Alle Inhalte werden mit AES-256-GCM verschlüsselt; der Schlüssel wird mit PBKDF2 (310.000 Iterationen) aus deinem Passwort abgeleitet und nur während der Sitzung im Arbeitsspeicher gehalten. Dein Passwort wird nicht gespeichert. Es gibt keine Passwort-Wiederherstellung: Ohne das Passwort können die Inhalte weder von dir noch von uns wiederhergestellt werden. Konten werden nicht mit anderen Geräten synchronisiert.
 
@@ -59,15 +59,19 @@ Gespräche, die du zusätzlich mit einem eigenen Passwort sperrst, werden auf di
 
 Du kannst alle Daten jederzeit in den Einstellungen unter „Alle meine Daten löschen und Einwilligung widerrufen“ oder über die Einstellungen deines Browsers löschen.
 
-## 5. KI-Verarbeitung auf dem Gerät
+## 5. Erzeugung der Antworten (KI-Verarbeitung)
 
-Die Antworten von Dilo werden von dem Open-Source-Sprachmodell ${MODEL.name} (Lizenz: ${MODEL.license}) erzeugt, das mithilfe von WebGPU direkt in deinem Browser läuft. Deine Eingaben verlassen dein Gerät dabei nicht. Es findet keine automatisierte Entscheidungsfindung im Sinne von Art. 22 DSGVO statt.
+Wenn du Dilo eine Nachricht sendest, überträgt dein Browser den Gesprächsverlauf (deine Nachrichten und Dilos bisherige Antworten im aktuellen Gespräch), die gewählten Einstellungen (Sprache, Gesprächsstil, Antwortart, Stimmung) und einen Systemhinweis an unsere Server-Funktion bei Vercel (Region Frankfurt). Diese leitet die Daten an den KI-Dienst ${AI_PROVIDER.name} der Scaleway SAS (Frankreich) weiter, wo ein KI-Sprachmodell in einem Rechenzentrum in ${AI_PROVIDER.location} die Antwort erzeugt. Die Antwort wird direkt an deinen Browser zurückgesendet.
 
-## 6. Download des KI-Modells von Hugging Face
+Wir speichern und protokollieren keine Nachrichteninhalte. Scaleway verwendet die Inhalte nicht zum Training von KI-Modellen und wertet sie nicht aus; nur wenn eine Anfrage den Dienst stört oder missbräuchlich ist, kann Scaleway den Inhalt der betroffenen Anfragen bis zu zwei Wochen speichern, um das Problem zu untersuchen und zu beheben. Technische Metadaten (z. B. Anzahl der Tokens) werden ohne Nachrichteninhalt protokolliert. Tagebucheinträge und Notizen werden nie übertragen.
 
-Erst wenn du auf „KI-Modell herunterladen“ klickst, lädt dein Browser die Modelldateien (ca. 1 GB) von Hugging Face, Inc. (USA) herunter. Dabei werden technisch bedingt deine IP-Adresse und Browserinformationen an Hugging Face übermittelt; Inhalte deiner Gespräche werden nicht übertragen. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die du durch das Auslösen des Downloads erteilst. Soweit Hugging Face nicht nach dem EU-US Data Privacy Framework zertifiziert ist, stützt sich die Übermittlung in die USA auf deine ausdrückliche Einwilligung nach Art. 49 Abs. 1 lit. a DSGVO. Weitere Informationen: https://huggingface.co/privacy
+Da deine Nachrichten Angaben zu deiner Gesundheit enthalten können, erfolgt die Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a i. V. m. Art. 6 Abs. 1 lit. a DSGVO), die du beim Start erteilst und jederzeit widerrufen kannst. Scaleway ist als Auftragsverarbeiter nach Art. 28 DSGVO tätig; die Verarbeitung findet in der EU statt. Es findet keine automatisierte Entscheidungsfindung im Sinne von Art. 22 DSGVO statt.
 
-Die übrigen technischen Bestandteile (Programmcode, Schriftarten, Modellbibliothek) werden von unserem eigenen Hoster ausgeliefert.
+Zum Schutz vor Missbrauch wird die IP-Adresse kurzzeitig im Arbeitsspeicher verwendet, um die Anzahl der Anfragen zu begrenzen (Art. 6 Abs. 1 lit. f DSGVO); sie wird nicht dauerhaft gespeichert.
+
+## 6. Keine Weitergabe an weitere Dritte
+
+Außer an die genannten Dienstleister (Vercel, Scaleway) werden keine Daten übermittelt. Schriftarten und alle anderen technischen Bestandteile werden von unserem eigenen Hoster ausgeliefert.
 
 ## 7. Externe Links
 
@@ -111,7 +115,7 @@ Du verpflichtest dich, Dilo nicht missbräuchlich oder rechtswidrig zu nutzen.
 
 ## 7. Verfügbarkeit und technische Voraussetzungen
 
-Dilo wird ohne Gewähr für eine ständige Verfügbarkeit bereitgestellt. Die KI benötigt einen Browser mit WebGPU-Unterstützung und ausreichend Arbeitsspeicher.
+Dilo wird ohne Gewähr für eine ständige Verfügbarkeit bereitgestellt. Für die Antworten ist eine Internetverbindung erforderlich.
 
 ## 8. Deine Daten
 
@@ -121,9 +125,9 @@ Alle Inhalte werden nur verschlüsselt in deinem Konto auf deinem Gerät gespeic
 
 Wir haften unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei Verletzung von Leben, Körper oder Gesundheit sowie nach dem Produkthaftungsgesetz. Da Dilo unentgeltlich angeboten wird, ist die Haftung im Übrigen ausgeschlossen, soweit gesetzlich zulässig.
 
-## 10. Open-Source-Komponenten
+## 10. KI-Modelle
 
-Dilo nutzt das Sprachmodell ${MODEL.name} des Qwen-Teams (Lizenz: ${MODEL.license}) sowie die Bibliothek WebLLM (Lizenz: Apache 2.0).
+Die Antworten werden von KI-Sprachmodellen erzeugt, die über ${AI_PROVIDER.name} in der EU bereitgestellt werden.
 
 ## 11. Änderungen und anwendbares Recht
 
@@ -161,17 +165,17 @@ Email: ${OPERATOR.email}
 ## 2. Summary
 
 - Dilo has **no cookies, no tracking and no analytics**. Accounts exist only, encrypted, on your device, never with us.
-- The AI runs **entirely on your device**. Your messages, journal entries and notes are **never sent to us or to third parties**. We have no access to them.
-- The only personal data we process is what is technically necessary to deliver the website (server log files at our hosting provider).
-- The AI model is downloaded once from Hugging Face, and only after you explicitly start the download.
+- Your messages to Dilo are sent **only to generate the reply** to an AI service in the EU (Scaleway, Paris), where they are **not used for training**. We do not store your messages ourselves.
+- Journal entries and notes **never** leave your device.
+- Beyond that, personal data is only processed to the extent technically necessary (server log files at our hosting provider).
 
 ## 3. Hosting
 
-This website is hosted by Vercel Inc. (USA). When you visit it, the host processes technically necessary data (IP address, date and time, requested address, browser type, referrer) in server log files to deliver the website and keep it secure. The legal basis is Art. 6(1)(f) GDPR; our legitimate interest is providing the website securely and reliably. A data processing agreement is in place with Vercel. Transfers to the USA are based on the EU-US Data Privacy Framework or the EU Standard Contractual Clauses.
+This website and its server function are hosted by Vercel Inc. (USA); the server function runs in the Frankfurt region (EU). When you visit it, the host processes technically necessary data (IP address, date and time, requested address, browser type, referrer) in server log files to deliver the website and keep it secure. The legal basis is Art. 6(1)(f) GDPR; our legitimate interest is providing the website securely and reliably. A data processing agreement is in place with Vercel. Transfers to the USA are based on the EU-US Data Privacy Framework or the EU Standard Contractual Clauses.
 
 ## 4. Storage on your device
 
-Dilo stores the following only in your browser (Local Storage and Cache Storage): your account with conversations, journal entries, notes and mood (encrypted), settings, your consent (with time and version) and the AI model files. This storage is strictly necessary for the service you request (§ 25(2) no. 2 TDDDG). Because your content may include information about your health, it is processed on the basis of your explicit consent (Art. 9(2)(a) GDPR).
+Dilo stores the following only in your browser (Local Storage): your account with conversations, journal entries, notes and mood (encrypted), settings, your consent (with time and version). This storage is strictly necessary for the service you request (§ 25(2) no. 2 TDDDG). Because your content may include information about your health, it is processed on the basis of your explicit consent (Art. 9(2)(a) GDPR).
 
 Your content (conversations, journal entries, notes and mood) is stored in an account that exists only on this device. Only the account name you choose and technical values (a salt) are stored in plain text. All content is encrypted with AES-256-GCM using a key derived from your password with PBKDF2 (310,000 iterations), which is kept in memory only for the session. Your password is not stored. There is no password recovery: without the password, neither you nor we can restore the content. Accounts are not synchronised with other devices.
 
@@ -179,15 +183,19 @@ Conversations you additionally lock with their own password are encrypted a seco
 
 You can delete all data at any time in the settings under "Delete all my data and withdraw consent", or through your browser settings.
 
-## 5. On-device AI processing
+## 5. Generating replies (AI processing)
 
-Dilo's replies are generated by the open-source language model ${MODEL.name} (licence: ${MODEL.license}), which runs directly in your browser using WebGPU. Your input never leaves your device. No automated decision-making within the meaning of Art. 22 GDPR takes place.
+When you send Dilo a message, your browser sends the conversation (your messages and Dilo's earlier replies in the current conversation), your chosen settings (language, conversation style, response type, mood) and a system instruction to our server function at Vercel (Frankfurt region). It forwards this data to the AI service ${AI_PROVIDER.name} of Scaleway SAS (France), where an AI language model in a data centre in ${AI_PROVIDER.location} generates the reply. The reply is sent straight back to your browser.
 
-## 6. Downloading the AI model from Hugging Face
+We do not store or log message content. Scaleway does not use the content to train AI models and does not analyse it; only if a request disrupts the service or is abusive may Scaleway store the content of the affected requests for up to two weeks to investigate and fix the problem. Technical metadata (such as token counts) is logged without message content. Journal entries and notes are never transmitted.
 
-Only when you click "Download AI model" does your browser download the model files (about 1 GB) from Hugging Face, Inc. (USA). For technical reasons, your IP address and browser information are transmitted to Hugging Face; no conversation content is transmitted. The legal basis is your consent (Art. 6(1)(a) GDPR), given by starting the download. Where Hugging Face is not certified under the EU-US Data Privacy Framework, the transfer to the USA is based on your explicit consent under Art. 49(1)(a) GDPR. More information: https://huggingface.co/privacy
+Because your messages may contain information about your health, they are processed on the basis of your explicit consent (Art. 9(2)(a) in conjunction with Art. 6(1)(a) GDPR), which you give at the start and can withdraw at any time. Scaleway acts as a processor under Art. 28 GDPR; processing takes place in the EU. No automated decision-making within the meaning of Art. 22 GDPR takes place.
 
-All other technical components (program code, fonts, model library) are delivered by our own hosting provider.
+To prevent abuse, your IP address is used briefly in memory to limit the number of requests (Art. 6(1)(f) GDPR); it is not stored permanently.
+
+## 6. No sharing with other third parties
+
+No data is shared with anyone other than the service providers named above (Vercel, Scaleway). Fonts and all other technical components are delivered by our own hosting provider.
 
 ## 7. External links
 
@@ -231,7 +239,7 @@ You agree not to use Dilo in an abusive or unlawful way.
 
 ## 7. Availability and technical requirements
 
-Dilo is provided without any guarantee of continuous availability. The AI requires a browser with WebGPU support and sufficient memory.
+Dilo is provided without any guarantee of continuous availability. Replies require an internet connection.
 
 ## 8. Your data
 
@@ -241,9 +249,9 @@ All content is stored only, encrypted, in your account on your device. We can ne
 
 We are liable without limitation for intent and gross negligence, for injury to life, body or health, and under the German Product Liability Act. As Dilo is provided free of charge, liability is otherwise excluded to the extent permitted by law.
 
-## 10. Open-source components
+## 10. AI models
 
-Dilo uses the language model ${MODEL.name} by the Qwen team (licence: ${MODEL.license}) and the WebLLM library (licence: Apache 2.0).
+Replies are generated by AI language models provided through ${AI_PROVIDER.name} in the EU.
 
 ## 11. Changes and governing law
 

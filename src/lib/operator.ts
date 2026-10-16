@@ -11,5 +11,5 @@ export const OPERATOR = {
 };
 
 /** Bump when the consent text or legal pages change in a way users must re-confirm. */
-export const CONSENT_VERSION = 1;
+export const CONSENT_VERSION = 2;
 export const LEGAL_LAST_UPDATED = { de: "Oktober 2026", en: "October 2026" };

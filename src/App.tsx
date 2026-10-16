@@ -4,13 +4,13 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal } from "lucide-react";
+import { BookOpen, Brain, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal, Smile } from "lucide-react";
 import { cn } from "./lib/utils";
-import { ChatError, chatWithDilo, deleteModel, getLanguage, isModelDownloaded, isWebGPUAvailable, LANGUAGES, loadModel, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
+import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
 import { detectCrisis } from "./lib/crisisDetect";
 import { CONSENT_VERSION } from "./lib/operator";
 import type { LegalPage } from "./lib/legal";
-import { TRANSLATIONS, type LanguageCode } from "./lib/translations";
+import { TRANSLATIONS, type LanguageCode, type Strings } from "./lib/translations";
 import { playReplyChime } from "./lib/sound";
 import { newId, titleFrom, type Conversation, type StoredMessage } from "./lib/journal";
 import { deleteAccount, saveVault, type Session, type Vault } from "./lib/accounts";
@@ -27,7 +27,6 @@ import { ModesMenu } from "./components/ModesMenu";
 import { AccountGate } from "./components/AccountGate";
 import { ConsentGate } from "./components/ConsentGate";
 import { LegalDialog, LegalLinks } from "./components/LegalDialog";
-import { ModelSetup, type ModelStatus } from "./components/ModelSetup";
 
 type View = "chat" | "journal";
 
@@ -50,6 +49,21 @@ const isConsent = (v: unknown): v is Consent | null =>
   v === null || (!!v && typeof v === "object" && typeof (v as Consent).version === "number" && typeof (v as Consent).acceptedAt === "number");
 
 const viewFromHash = (): View => (window.location.hash === "#journal" ? "journal" : "chat");
+
+/** Small centred label shown in the chat where Dilo's conversation style changes. */
+function ModeDivider({ t, mode }: { t: Strings; mode: Mode }) {
+  const Icon = mode === "psychologist" ? Brain : Smile;
+  return (
+    <div className="my-6 flex items-center gap-3 text-xs text-muted" role="separator">
+      <span className="h-px flex-1 bg-line" />
+      <span className="flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1">
+        <Icon className="h-3.5 w-3.5 text-moss" aria-hidden="true" />
+        {mode === "psychologist" ? t.psychologist : t.friendly}
+      </span>
+      <span className="h-px flex-1 bg-line" />
+    </div>
+  );
+}
 
 /**
  * Entry point. Until the user has given every consent, only the consent screen and the legal pages exist:
@@ -179,11 +193,8 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
   const [errorFor, setErrorFor] = useState<{ id: string; kind: ChatErrorKind } | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [crisisOpen, setCrisisOpen] = useState(false);
-  const [modelStatus, setModelStatus] = useState<ModelStatus>({ state: "checking" });
   const [streaming, setStreaming] = useState<{ conversationId: string; text: string } | null>(null);
 
-  const lastMessageRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
 
   const t = TRANSLATIONS[language];
   const lang = getLanguage(language);
@@ -217,33 +228,8 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
     setViewState(next);
   };
 
-  const startModel = useCallback(() => {
-    setModelStatus({ state: "loading", progress: 0, stage: "download", mb: null });
-    loadModel((p) => setModelStatus({ state: "loading", ...p }))
-      .then(() => setModelStatus({ state: "ready" }))
-      .catch((e) => {
-        const kind: ChatErrorKind = e instanceof ChatError ? e.kind : "download_failed";
-        setModelStatus(kind === "unsupported" ? { state: "unsupported" } : { state: "error", kind });
-      });
-  }, []);
-
-  // Nothing is downloaded automatically: a cached model is loaded from the device, otherwise we wait for a click.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!(await isWebGPUAvailable())) return void (!cancelled && setModelStatus({ state: "unsupported" }));
-      if (await isModelDownloaded()) {
-        if (!cancelled) startModel();
-      } else if (!cancelled) setModelStatus({ state: "not_downloaded" });
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [startModel]);
-
   const deleteAllData = async () => {
     if (!confirm(t.deleteAllConfirm)) return;
-    await deleteModel();
     try {
       Object.keys(localStorage)
         .filter((k) => k.startsWith("dilo."))
@@ -255,17 +241,53 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
     window.location.reload();
   };
 
-  // Keep the newest content in view: the start of Dilo's reply, or the bottom after the user sends.
+  // Follow the conversation: stay at the newest message (including a reply as it streams in),
+  // unless the user has scrolled up to read something earlier.
+  const followRef = useRef(true);
   useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (!last || view !== "chat") return;
-    const target = last.role === "model" ? lastMessageRef.current : bottomRef.current;
-    target?.scrollIntoView({ behavior: "smooth", block: last.role === "model" ? "start" : "end" });
-  }, [messages.length, view]);
-
+    // Only a scroll *up* by the user stops following; our own smooth scrolls only move down.
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      const distance = document.documentElement.scrollHeight - (y + window.innerHeight);
+      if (distance < 160) followRef.current = true;
+      else if (y < lastY - 2) followRef.current = false;
+      lastY = y;
+    };
+    // Detect the intent directly too, so a reply streaming in can never fight the user's scroll.
+    const stop = () => (followRef.current = false);
+    const onWheel = (e: WheelEvent) => e.deltaY < 0 && stop();
+    let touchY = 0;
+    const onTouchStart = (e: TouchEvent) => (touchY = e.touches[0]?.clientY ?? 0);
+    const onTouchMove = (e: TouchEvent) => (e.touches[0]?.clientY ?? 0) > touchY + 8 && stop();
+    const onKey = (e: KeyboardEvent) => ["ArrowUp", "PageUp", "Home"].includes(e.key) && !(e.target instanceof HTMLTextAreaElement) && stop();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+  const scrollToLatest = useCallback((smooth: boolean) => {
+    requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" }));
+  }, []);
   useEffect(() => {
-    if (isLoading || error) bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [isLoading, error]);
+    if (view !== "chat") return;
+    followRef.current = true;
+    scrollToLatest(false);
+  }, [view, activeId, scrollToLatest]);
+  useEffect(() => {
+    if (view === "chat" && followRef.current) scrollToLatest(true);
+  }, [messages.length, isLoading, error, view, scrollToLatest]);
+  useEffect(() => {
+    if (streaming?.text && followRef.current) scrollToLatest(false);
+  }, [streaming?.text, scrollToLatest]);
 
   const appendMessage = useCallback(
     (conversationId: string, message: StoredMessage) =>
@@ -288,7 +310,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
         );
         // If the keyword check already showed crisis lines under the user's message, don't repeat them.
         const alreadyShown = !!history[history.length - 1]?.crisis;
-        appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis && !alreadyShown, timestamp: Date.now() });
+        appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis && !alreadyShown, mode, timestamp: Date.now() });
         if (sound) playReplyChime();
       } catch (e) {
         setErrorFor({ id: conversationId, kind: e instanceof ChatError ? e.kind : "generation_failed" });
@@ -302,7 +324,8 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
 
   const send = (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
-    if (!text || loadingFor || modelStatus.state !== "ready") return;
+    if (!text || loadingFor) return;
+    followRef.current = true; // sending always brings the newest messages into view
     const userMessage: StoredMessage = { id: newId(), role: "user", text, timestamp: Date.now(), ...(detectCrisis(text) ? { crisis: true } : {}) };
 
     let conversationId: string;
@@ -351,14 +374,18 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
   };
 
   const isEmpty = messages.length === 0;
-  const modelReady = modelStatus.state === "ready";
+  /** Mode of the last Dilo reply before index i; a new conversation starts out as Friend. */
+  const modeBefore = (i: number): Mode => {
+    for (let j = i - 1; j >= 0; j--) if (messages[j].role === "model") return messages[j].mode ?? "friendly";
+    return "friendly";
+  };
   const navItems: { id: View; label: string; icon: typeof MessageCircle }[] = [
     { id: "chat", label: t.navChat, icon: MessageCircle },
     { id: "journal", label: t.navJournal, icon: BookOpen },
   ];
 
   return (
-    <div dir={dir} className="flex h-dvh flex-col bg-paper text-ink">
+    <div dir={dir} className="flex min-h-dvh flex-col bg-paper text-ink">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4">
           <div className="flex items-center gap-3 sm:gap-5">
@@ -413,7 +440,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto" aria-live={view === "chat" ? "polite" : undefined}>
+      <main className="flex-1" aria-live={view === "chat" ? "polite" : undefined}>
         <div className="mx-auto max-w-7xl px-4 py-8">
           {view === "journal" ? (
             <JournalView
@@ -433,12 +460,6 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
             />
           ) : (
             <>
-              {modelStatus.state !== "ready" && modelStatus.state !== "checking" && (
-                <div className="mb-8">
-                  <ModelSetup t={t} status={modelStatus} onDownload={startModel} />
-                </div>
-              )}
-
               {isEmpty ? (
                 <section className="pt-2 sm:pt-12">
                   <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.1] sm:text-5xl">{t.welcomeTitle}</h1>
@@ -455,7 +476,6 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
                         key={text}
                         type="button"
                         onClick={() => send(text)}
-                        disabled={!modelReady}
                         className="rounded-lg disabled:cursor-not-allowed disabled:opacity-50 border border-dashed border-line px-3 py-2 text-sm text-ink hover:border-moss/60 hover:bg-moss-soft"
                       >
                         {text}
@@ -466,18 +486,22 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
               ) : (
                 <div className="space-y-8">
                   {messages.map((m, i) => (
-                    <div key={m.id} ref={i === messages.length - 1 ? lastMessageRef : undefined} className="scroll-mt-20">
+                    <div key={m.id}>
+                      {m.role === "model" && m.mode && m.mode !== modeBefore(i) && <ModeDivider t={t} mode={m.mode} />}
                       <ChatMessage message={m} t={t} language={language} textSize={textSize} />
                     </div>
                   ))}
 
                   {isLoading && streaming?.text && (
+                    <>
+                    {mode !== modeBefore(messages.length) && <ModeDivider t={t} mode={mode} />}
                     <ChatMessage
                       message={{ id: "streaming", role: "model", text: streaming.text, timestamp: Date.now() }}
                       t={t}
                       language={language}
                       textSize={textSize}
                     />
+                    </>
                   )}
 
                   {isLoading && !streaming?.text && (
@@ -495,7 +519,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
                   {error && active && (
                     <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-alert/30 bg-alert-soft px-4 py-3 text-sm">
                       <span>{t.errors[error]}</span>
-                      {error !== "unsupported" && error !== "not_ready" && (
+                      {error !== "not_configured" && error !== "bad_request" && (
                         <button
                           type="button"
                           onClick={() => requestReply(active.id, messages)}
@@ -511,15 +535,14 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
               )}
             </>
           )}
-          <div ref={bottomRef} />
           {view === "journal" && <LegalLinks t={t} onOpen={onOpenLegal} className="mt-12" />}
         </div>
       </main>
 
       {view === "chat" && (
-        <footer className="border-t border-line bg-paper">
+        <footer className="sticky bottom-0 z-10 border-t border-line bg-paper/95 backdrop-blur">
           <div className="mx-auto max-w-7xl px-4 pb-2 pt-2">
-            <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null || !modelReady} />
+            <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null} />
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-muted">
               <p className="text-center">{t.disclaimer}</p>
               <LegalLinks t={t} onOpen={onOpenLegal} className="text-[11px]" />
