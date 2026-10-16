@@ -275,7 +275,11 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
     };
   }, []);
   const scrollToLatest = useCallback((smooth: boolean) => {
-    requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" }));
+    requestAnimationFrame(() => {
+      // Re-check: the user may have scrolled up between scheduling and running this frame.
+      if (!followRef.current) return;
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: smooth ? "smooth" : "auto" });
+    });
   }, []);
   useEffect(() => {
     if (view !== "chat") return;
