@@ -148,3 +148,15 @@
 .legal-prose li {
   margin-bottom: 0.3em;
 }
+
+/* Moving bar while the first weight file downloads and the percentage is still 0 */
+.progress-indeterminate {
+  animation: indeterminate 1.4s ease-in-out infinite;
+}
+@keyframes indeterminate {
+  0% { left: -35%; }
+  100% { left: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .progress-indeterminate { animation: none; left: 0; width: 100%; opacity: 0.4; }
+}

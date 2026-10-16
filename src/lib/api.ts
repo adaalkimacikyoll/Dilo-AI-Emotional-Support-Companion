@@ -40,7 +40,7 @@ export const MODEL = {
   id: "Qwen3-1.7B-q4f16_1-MLC",
   name: "Qwen3 1.7B",
   license: "Apache 2.0",
-  downloadMB: 1000,
+  downloadMB: 970,
   weightsUrl: "https://huggingface.co/mlc-ai/Qwen3-1.7B-q4f16_1-MLC",
   libPath: "/models/Qwen3-1.7B-q4f16_1_cs1k-webgpu.wasm",
 };
@@ -87,12 +87,27 @@ export async function isModelDownloaded(): Promise<boolean> {
 
 let enginePromise: Promise<WebWorkerMLCEngine> | null = null;
 
-/** Downloads (first time) or loads (from the device cache) the model. Progress is 0..1. */
-export function loadModel(onProgress: (progress: number) => void): Promise<WebWorkerMLCEngine> {
+export interface LoadProgress {
+  /** 0..1. WebLLM only updates this after each weight file, so it can stay at 0 for a while. */
+  progress: number;
+  stage: "download" | "load";
+  /** Megabytes fetched or loaded so far, parsed from WebLLM's status text. */
+  mb: number | null;
+}
+
+/** Turns WebLLM's progress report into something the UI can show honestly. */
+export function parseProgress(report: { progress: number; text: string }): LoadProgress {
+  const mb = /(\d+)MB (fetched|loaded)/.exec(report.text);
+  const stage = /Loading model from cache/.test(report.text) ? "load" : "download";
+  return { progress: report.progress, stage, mb: mb ? Number(mb[1]) : null };
+}
+
+/** Downloads (first time) or loads (from the device cache) the model. */
+export function loadModel(onProgress: (progress: LoadProgress) => void): Promise<WebWorkerMLCEngine> {
   if (useMock()) {
     enginePromise ??= (async () => {
       for (let p = 0; p <= 1; p += 0.25) {
-        onProgress(p);
+        onProgress({ progress: p, stage: "download", mb: Math.round(p * MODEL.downloadMB) });
         await new Promise((r) => setTimeout(r, 150));
       }
       localStorage.setItem(MOCK_CACHE_KEY, "1");
@@ -102,7 +117,7 @@ export function loadModel(onProgress: (progress: number) => void): Promise<WebWo
   }
   enginePromise ??= CreateWebWorkerMLCEngine(new Worker(new URL("./llm.worker.ts", import.meta.url), { type: "module" }), MODEL.id, {
     appConfig: appConfig(),
-    initProgressCallback: (report) => onProgress(report.progress),
+    initProgressCallback: (report) => onProgress(parseProgress(report)),
   }).catch((error) => {
     enginePromise = null;
     throw new ChatError(classifyError(error, "download_failed"));

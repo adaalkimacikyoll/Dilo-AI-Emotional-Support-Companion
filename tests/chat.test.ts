@@ -157,3 +157,13 @@ describe("legal texts", () => {
     expect(typeof hasPlaceholders()).toBe("boolean");
   });
 });
+
+describe("parseProgress", () => {
+  it("reads megabytes and stage from WebLLM status text", async () => {
+    const { parseProgress } = await import("../src/lib/api");
+    expect(parseProgress({ progress: 0, text: "Fetching param cache[0/30]: 0MB fetched. 0% completed, 3 secs elapsed." })).toEqual({ progress: 0, stage: "download", mb: 0 });
+    expect(parseProgress({ progress: 0.2, text: "Fetching param cache[3/30]: 211MB fetched. 21% completed" })).toEqual({ progress: 0.2, stage: "download", mb: 211 });
+    expect(parseProgress({ progress: 0.5, text: "Loading model from cache[15/30]: 480MB loaded. 50% completed" }).stage).toBe("load");
+    expect(parseProgress({ progress: 0, text: "Start to fetch params" }).mb).toBeNull();
+  });
+});
