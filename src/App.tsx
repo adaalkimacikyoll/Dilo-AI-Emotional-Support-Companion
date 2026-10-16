@@ -488,7 +488,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
                   </div>
                 </section>
               ) : (
-                <div className="space-y-8">
+                <div className="mx-auto max-w-3xl space-y-7">
                   {messages.map((m, i) => (
                     <div key={m.id}>
                       {m.role === "model" && m.mode && m.mode !== modeBefore(i) && <ModeDivider t={t} mode={m.mode} />}
@@ -545,7 +545,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
 
       {view === "chat" && (
         <footer className="sticky bottom-0 z-10 border-t border-line bg-paper/95 backdrop-blur">
-          <div className="mx-auto max-w-7xl px-4 pb-2 pt-2">
+          <div className="mx-auto max-w-3xl px-4 pb-2 pt-2">
             <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null} />
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-muted">
               <p className="text-center">{t.disclaimer}</p>
