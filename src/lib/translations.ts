@@ -6,9 +6,9 @@ type RecCategory = "activity" | "food" | "extra";
 export interface Strings {
   tagline: string;
   friendly: string;
-  reflective: string;
+  psychologist: string;
   friendlyHint: string;
-  reflectiveHint: string;
+  psychologistHint: string;
   modeLabel: string;
   getHelp: string;
   openPanel: string;
@@ -111,10 +111,10 @@ export interface Strings {
 export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   en: {
     tagline: "Emotional support companion",
-    friendly: "Friendly",
-    reflective: "Reflective",
+    friendly: "Friend",
+    psychologist: "Psychologist",
     friendlyHint: "Casual and warm, like talking to a friend",
-    reflectiveHint: "Calmer and more structured, with guided reflection",
+    psychologistHint: "Works like a psychologist: focused questions and evidence-based techniques. An AI, not a licensed professional.",
     modeLabel: "Conversation style",
     getHelp: "Get help now",
     openPanel: "Mood and settings",
@@ -261,10 +261,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   },
   tr: {
     tagline: "Duygusal destek arkadaşı",
-    friendly: "Arkadaşça",
-    reflective: "Yansıtıcı",
+    friendly: "Arkadaş",
+    psychologist: "Psikolog",
     friendlyHint: "Rahat ve sıcak, bir arkadaşla konuşur gibi",
-    reflectiveHint: "Daha sakin ve yapılandırılmış, rehberli düşünme ile",
+    psychologistHint: "Bir psikolog gibi çalışır: odaklı sorular ve bilimsel temelli teknikler. Lisanslı bir uzman değil, yapay zekadır.",
     modeLabel: "Sohbet tarzı",
     getHelp: "Acil yardım",
     openPanel: "Ruh hali ve ayarlar",
@@ -411,10 +411,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   },
   de: {
     tagline: "Begleiter für emotionale Unterstützung",
-    friendly: "Freundschaftlich",
-    reflective: "Reflektierend",
+    friendly: "Freund",
+    psychologist: "Psychologe",
     friendlyHint: "Locker und warm, wie ein Gespräch mit einer Freundin",
-    reflectiveHint: "Ruhiger und strukturierter, mit angeleiteter Reflexion",
+    psychologistHint: "Arbeitet wie ein Psychologe: gezielte Fragen und evidenzbasierte Methoden. Eine KI, keine approbierte Fachkraft.",
     modeLabel: "Gesprächsstil",
     getHelp: "Sofort Hilfe",
     openPanel: "Stimmung und Einstellungen",
@@ -561,10 +561,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   },
   fr: {
     tagline: "Compagnon de soutien émotionnel",
-    friendly: "Amical",
-    reflective: "Réflexif",
+    friendly: "Ami",
+    psychologist: "Psychologue",
     friendlyHint: "Détendu et chaleureux, comme avec un ami",
-    reflectiveHint: "Plus calme et structuré, avec une réflexion guidée",
+    psychologistHint: "Fonctionne comme un psychologue : questions ciblées et techniques fondées sur des preuves. Une IA, pas un professionnel diplômé.",
     modeLabel: "Style de conversation",
     getHelp: "Aide immédiate",
     openPanel: "Humeur et paramètres",
@@ -711,10 +711,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   },
   es: {
     tagline: "Compañero de apoyo emocional",
-    friendly: "Cercano",
-    reflective: "Reflexivo",
+    friendly: "Amigo",
+    psychologist: "Psicólogo",
     friendlyHint: "Relajado y cálido, como hablar con un amigo",
-    reflectiveHint: "Más calmado y estructurado, con reflexión guiada",
+    psychologistHint: "Funciona como un psicólogo: preguntas concretas y técnicas basadas en evidencia. Es una IA, no un profesional colegiado.",
     modeLabel: "Estilo de conversación",
     getHelp: "Ayuda inmediata",
     openPanel: "Estado de ánimo y ajustes",
@@ -861,10 +861,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   },
   ar: {
     tagline: "رفيق للدعم العاطفي",
-    friendly: "ودّي",
-    reflective: "تأمّلي",
+    friendly: "صديق",
+    psychologist: "أخصائي نفسي",
     friendlyHint: "بسيط ودافئ، كأنك تتحدث مع صديق",
-    reflectiveHint: "أهدأ وأكثر تنظيمًا، مع تأمل موجَّه",
+    psychologistHint: "يعمل مثل الأخصائي النفسي: أسئلة مركّزة وتقنيات مثبتة علميًا. ذكاء اصطناعي وليس أخصائيًا مرخّصًا.",
     modeLabel: "أسلوب المحادثة",
     getHelp: "مساعدة فورية",
     openPanel: "المزاج والإعدادات",
@@ -1011,10 +1011,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
   },
   fa: {
     tagline: "همراهی برای حمایت عاطفی",
-    friendly: "دوستانه",
-    reflective: "تأملی",
+    friendly: "دوست",
+    psychologist: "روانشناس",
     friendlyHint: "خودمانی و گرم، مثل صحبت با یک دوست",
-    reflectiveHint: "آرام‌تر و ساختاریافته‌تر، با تأمل هدایت‌شده",
+    psychologistHint: "مثل یک روانشناس کار می‌کند: پرسش‌های دقیق و روش‌های علمی. هوش مصنوعی است، نه یک متخصص دارای مجوز.",
     modeLabel: "سبک گفتگو",
     getHelp: "کمک فوری",
     openPanel: "حال و تنظیمات",

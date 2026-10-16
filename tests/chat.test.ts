@@ -9,7 +9,7 @@ const valid = {
     { role: "user", text: "I feel stressed about exams" },
   ],
   language: "tr",
-  mode: "reflective",
+  mode: "psychologist",
   support: "listen",
   mood: "stressed",
 };
@@ -20,12 +20,12 @@ beforeEach(() => resetRateLimits());
 
 describe("parseChatRequest", () => {
   it("accepts a valid request", () => {
-    expect(parseChatRequest(valid)).toMatchObject({ language: "tr", mode: "reflective", mood: "stressed" });
+    expect(parseChatRequest(valid)).toMatchObject({ language: "tr", mode: "psychologist", mood: "stressed" });
   });
 
   it.each([
     ["unknown language", { ...valid, language: "xx" }],
-    ["unknown mode", { ...valid, mode: "psychologist" }],
+    ["unknown mode", { ...valid, mode: "therapist" }],
     ["unknown mood", { ...valid, mood: "angry" }],
     ["unknown support style", { ...valid, support: "lecture" }],
     ["empty history", { ...valid, history: [] }],
@@ -73,10 +73,10 @@ describe("extractCrisis", () => {
 
 describe("getSystemInstruction", () => {
   it("names the reply language, mood and safety marker", () => {
-    const prompt = getSystemInstruction("tr", "reflective", "stressed");
+    const prompt = getSystemInstruction("tr", "psychologist", "stressed");
     expect(prompt).toContain("always reply in Turkish");
     expect(prompt).toContain("current mood as: stressed");
-    expect(prompt).toContain("Mode: Reflective");
+    expect(prompt).toContain("Mode: Psychologist");
     expect(prompt).toContain("[CRISIS]");
     expect(prompt).toContain("Do not use emojis");
   });
@@ -87,13 +87,21 @@ describe("getSystemInstruction", () => {
     expect(listen).toContain("Do not give suggestions");
     expect(listen).not.toContain("Listen and suggest");
     expect(listen).toContain("[CRISIS]");
-    const tips = getSystemInstruction("en", "reflective", null, "tips");
+    const tips = getSystemInstruction("en", "psychologist", null, "tips");
     expect(tips).toContain("Response type: Listen and suggest");
     expect(tips).toContain("grounding");
   });
 
+  it("makes psychologist mode work like a psychologist without claiming a licence", () => {
+    const prompt = getSystemInstruction("en", "psychologist", null, "listen");
+    expect(prompt).toContain("Work the way an experienced psychologist works");
+    expect(prompt).toContain("cognitive behavioural therapy");
+    expect(prompt).toContain("Never claim a licence");
+    expect(prompt).toContain("never diagnose");
+  });
+
   it("keeps mode instructions about tone only, so they never contradict listen mode", () => {
-    for (const mode of ["friendly", "reflective"] as const) {
+    for (const mode of ["friendly", "psychologist"] as const) {
       const prompt = getSystemInstruction("en", mode, null, "listen");
       expect(prompt).not.toMatch(/offer an idea|may draw on/i);
     }

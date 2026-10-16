@@ -139,7 +139,7 @@ export async function handleChat(
       model: env.GEMINI_MODEL || DEFAULT_MODEL,
       contents: toContents(request.history),
       systemInstruction: getSystemInstruction(request.language, request.mode, request.mood, request.support),
-      temperature: request.mode === "reflective" ? 0.5 : 0.7,
+      temperature: request.mode === "psychologist" ? 0.5 : 0.7,
     });
     const { text, crisis } = extractCrisis(raw);
     if (!text) return fail("unknown");
