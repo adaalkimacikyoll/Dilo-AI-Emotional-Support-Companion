@@ -34,7 +34,7 @@ import { CrisisResources } from "./components/CrisisResources";
 import { ChatMessage } from "./components/ChatMessage";
 import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
-import { SupportToggle } from "./components/SupportToggle";
+import { SupportToggle, supportHint } from "./components/SupportToggle";
 import { ConsentGate } from "./components/ConsentGate";
 import { LegalDialog, LegalLinks } from "./components/LegalDialog";
 import { ModelSetup, type ModelStatus } from "./components/ModelSetup";
@@ -65,7 +65,7 @@ const viewFromHash = (): View => (window.location.hash === "#journal" ? "journal
 
 function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (m: Mode) => void }) {
   return (
-    <div role="radiogroup" aria-label={t.modeLabel} className="flex rounded-full border border-line bg-surface p-0.5">
+    <div role="radiogroup" aria-label={t.modeLabel} className="flex w-full rounded-full border border-line bg-surface p-0.5 sm:w-auto">
       {(["friendly", "psychologist"] as const).map((m) => (
         <button
           key={m}
@@ -74,7 +74,7 @@ function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (
           aria-checked={mode === m}
           title={m === "friendly" ? t.friendlyHint : t.psychologistHint}
           onClick={() => onChange(m)}
-          className={cn("whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors", mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink")}
+          className={cn("flex-1 rounded-full px-3 py-1 text-center text-sm leading-tight transition-colors sm:flex-none sm:whitespace-nowrap", mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink")}
         >
           {m === "friendly" ? t.friendly : t.psychologist}
         </button>
@@ -340,9 +340,9 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
           <div className="flex items-center gap-3 sm:gap-5">
             <button type="button" onClick={startNewConversation} className="flex items-center gap-2.5" aria-label={t.newChat}>
               <Logo className="h-8 w-8" />
-              <span className="hidden text-start min-[420px]:block">
+              <span className="hidden text-start sm:block">
                 <span className="block font-display text-xl font-bold leading-none">Dilo</span>
-                <span className="hidden whitespace-nowrap text-xs text-muted xl:block">{t.tagline}</span>
+                <span className="hidden whitespace-nowrap text-xs text-muted lg:block">{t.tagline}</span>
               </span>
             </button>
 
@@ -358,7 +358,7 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
                     view === id ? "bg-moss-soft font-semibold text-ink" : "text-muted hover:text-ink",
                   )}
                 >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <Icon className="hidden h-4 w-4 min-[400px]:block" aria-hidden="true" />
                   {label}
                 </button>
               ))}
@@ -366,20 +366,14 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            {view === "chat" && (
-              <div className="hidden lg:block">
-                <ModeSwitch t={t} mode={mode} onChange={setMode} />
-              </div>
-            )}
-
             <button
               type="button"
               onClick={() => setCrisisOpen(true)}
               className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-medium text-alert hover:bg-alert-soft"
             >
               <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden xl:inline">{t.getHelp}</span>
-              <span className="sr-only xl:hidden">{t.getHelp}</span>
+              <span className="hidden min-[400px]:inline">{t.getHelp}</span>
+              <span className="sr-only min-[400px]:hidden">{t.getHelp}</span>
             </button>
 
             <button
@@ -415,10 +409,6 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
             />
           ) : (
             <>
-              <div className="mb-6 flex justify-center lg:hidden">
-                <ModeSwitch t={t} mode={mode} onChange={setMode} />
-              </div>
-
               {modelStatus.state !== "ready" && modelStatus.state !== "checking" && (
                 <div className="mb-8">
                   <ModelSetup t={t} status={modelStatus} onDownload={startModel} />
@@ -505,7 +495,16 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
       {view === "chat" && (
         <footer className="border-t border-line bg-paper">
           <div className="mx-auto max-w-3xl px-4 pb-4 pt-3">
-            <SupportToggle t={t} value={support} onChange={setSupport} />
+            <div className="mb-2 space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <ModeSwitch t={t} mode={mode} onChange={setMode} />
+                <SupportToggle t={t} value={support} onChange={setSupport} />
+              </div>
+              <p className="text-xs text-muted" aria-live="polite">
+                {supportHint(t, support)}
+              </p>
+              {mode === "psychologist" && <p className="text-xs text-muted">{t.psychologistHint}</p>}
+            </div>
             <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null || !modelReady} />
             <p className="mt-2 text-center text-xs text-muted">{t.disclaimer}</p>
             <LegalLinks t={t} onOpen={onOpenLegal} className="mt-1" />

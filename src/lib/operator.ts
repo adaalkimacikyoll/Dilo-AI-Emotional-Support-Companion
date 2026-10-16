@@ -1,13 +1,13 @@
 /**
  * Who runs Dilo. Required for the Impressum (§ 5 DDG) and the privacy policy (Art. 13 GDPR).
- * Replace every placeholder before publishing. `npm run check:legal` fails while any remain.
+ * `npm run check:legal` fails if any placeholder remains.
  */
 export const OPERATOR = {
-  name: "[Vor- und Nachname]",
-  street: "[Straße und Hausnummer]",
-  city: "[PLZ und Ort]",
+  name: "Ada Alkim Acikyol",
+  street: "Hans-Beimler-Straße 69",
+  city: "14554 Seddiner See (OT Neuseddin)",
   country: "Deutschland",
-  email: "[E-Mail-Adresse]",
+  email: "ada.acikyol@gmail.com",
 };
 
 /** Bump when the consent text or legal pages change in a way users must re-confirm. */
