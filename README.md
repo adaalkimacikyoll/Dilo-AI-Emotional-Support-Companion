@@ -13,6 +13,8 @@ Dilo is an AI-powered emotional support chat app. It listens without judgement, 
 ## Features
 
 - **Two conversation styles.** *Friendly* is casual and warm. *Reflective* is calmer and more structured, using reflective listening and well-established self-help techniques. You can switch at any time.
+- **Just listen, or listen and give tips.** Choose at any point whether Dilo should only listen and reflect, or also suggest things that might help.
+- **Journal.** Every conversation is saved and can be continued, deleted, or locked with its own password (encrypted on the device). Private journal entries and notes are never sent to the AI.
 - **Mood check-in.** Pick how you feel and Dilo factors it into its replies. Each mood also shows curated ideas for activities, food and drink, and other small steps.
 - **Safety first.** A "Get help now" dialog is always one click away, with emergency guidance and verified crisis lines. When a message suggests risk, the model flags it and the app shows crisis resources directly under the reply.
 - **Seven languages.** English, Turkish, German, French, Spanish, Arabic and Persian, with full right-to-left layout for Arabic and Persian.

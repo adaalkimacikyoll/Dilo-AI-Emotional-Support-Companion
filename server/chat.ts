@@ -4,6 +4,7 @@ import {
   LIMITS,
   MODES,
   MOOD_IDS,
+  SUPPORT_STYLES,
   type ChatErrorKind,
   type ChatRequest,
   type ChatResponse,
@@ -33,6 +34,8 @@ export function parseChatRequest(body: unknown): ChatRequest | null {
   const b = body as Record<string, unknown>;
   if (!LANGUAGE_CODES.includes(b.language as never)) return null;
   if (!MODES.includes(b.mode as never)) return null;
+  // Older clients don't send a support style; they get the original behaviour (tips).
+  if (b.support !== undefined && !SUPPORT_STYLES.includes(b.support as never)) return null;
   if (b.mood !== null && b.mood !== undefined && !MOOD_IDS.includes(b.mood as never)) return null;
   if (!Array.isArray(b.history) || b.history.length === 0 || b.history.length > LIMITS.maxTurns) return null;
 
@@ -54,6 +57,7 @@ export function parseChatRequest(body: unknown): ChatRequest | null {
     history,
     language: b.language as ChatRequest["language"],
     mode: b.mode as ChatRequest["mode"],
+    support: (b.support ?? "tips") as ChatRequest["support"],
     mood: (b.mood ?? null) as ChatRequest["mood"],
   };
 }
@@ -134,7 +138,7 @@ export async function handleChat(
     const raw = await run({
       model: env.GEMINI_MODEL || DEFAULT_MODEL,
       contents: toContents(request.history),
-      systemInstruction: getSystemInstruction(request.language, request.mode, request.mood),
+      systemInstruction: getSystemInstruction(request.language, request.mode, request.mood, request.support),
       temperature: request.mode === "reflective" ? 0.5 : 0.7,
     });
     const { text, crisis } = extractCrisis(raw);
