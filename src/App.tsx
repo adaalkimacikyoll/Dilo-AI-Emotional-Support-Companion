@@ -4,8 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Brain, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal, Smile } from "lucide-react";
-import { cn } from "./lib/utils";
+import { Brain, LifeBuoy, Menu, RotateCw, SlidersHorizontal, Smile } from "lucide-react";
 import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
 import { detectCrisis } from "./lib/crisisDetect";
 import { CONSENT_VERSION } from "./lib/operator";
@@ -24,6 +23,7 @@ import { ChatMessage } from "./components/ChatMessage";
 import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
 import { ModesMenu } from "./components/ModesMenu";
+import { Sidebar } from "./components/Sidebar";
 import { AccountGate } from "./components/AccountGate";
 import { ConsentGate } from "./components/ConsentGate";
 import { LegalDialog, LegalLinks } from "./components/LegalDialog";
@@ -140,6 +140,8 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
   const [support, setSupport] = usePersistentState<SupportStyle>("dilo.support", "tips", isSupport);
   const [textSize, setTextSize] = usePersistentState<TextSize>("dilo.textSize", "medium", isTextSize);
   const [sound, setSound] = usePersistentState<boolean>("dilo.sound", false, (v): v is boolean => typeof v === "boolean");
+  const [sidebarCollapsed, setSidebarCollapsed] = usePersistentState<boolean>("dilo.sidebarCollapsed", false, (v): v is boolean => typeof v === "boolean");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Conversations, journal, notes and mood live in the account's encrypted vault.
   const [vault, setVault] = useState<Vault>(session.vault);
@@ -383,42 +385,46 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
     for (let j = i - 1; j >= 0; j--) if (messages[j].role === "model") return messages[j].mode ?? "friendly";
     return "friendly";
   };
-  const navItems: { id: View; label: string; icon: typeof MessageCircle }[] = [
-    { id: "chat", label: t.navChat, icon: MessageCircle },
-    { id: "journal", label: t.navJournal, icon: BookOpen },
-  ];
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []);
 
   return (
-    <div dir={dir} className="flex min-h-dvh flex-col bg-paper text-ink">
-      <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-4">
-          <div className="flex items-center gap-3 sm:gap-5">
-            <button type="button" onClick={startNewConversation} className="flex items-center gap-2.5" aria-label={t.newChat}>
-              <Logo className="h-8 w-8" />
-              <span className="hidden text-start sm:block">
-                <span className="block font-display text-xl font-bold leading-none">Dilo</span>
-                <span className="hidden whitespace-nowrap text-xs text-muted lg:block">{t.tagline}</span>
-              </span>
-            </button>
+    <div dir={dir} className="flex min-h-dvh bg-paper text-ink">
+      <Sidebar
+        t={t}
+        conversations={conversations}
+        activeId={active?.id ?? null}
+        view={view}
+        accountName={session.account.name}
+        collapsed={sidebarCollapsed}
+        onToggleCollapsed={() => setSidebarCollapsed((c) => !c)}
+        mobileOpen={sidebarOpen}
+        onCloseMobile={closeSidebar}
+        onNewChat={startNewConversation}
+        onOpenJournal={() => setView("journal")}
+        onOpenConversation={continueConversation}
+        onOpenLockedConversation={() => setView("journal")}
+        onOpenSettings={() => setPanelOpen(true)}
+      />
 
-            <nav aria-label="Dilo" className="flex items-center gap-1">
-              {navItems.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setView(id)}
-                  aria-current={view === id ? "page" : undefined}
-                  className={cn(
-                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-2 text-sm transition-colors sm:py-1.5",
-                    view === id ? "bg-moss-soft font-semibold text-ink" : "text-muted hover:text-ink",
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  <span className="sr-only sm:not-sr-only">{label}</span>
-                </button>
-              ))}
-            </nav>
+      <div className="flex min-w-0 flex-1 flex-col">
+      <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
+        <div className="flex h-16 items-center justify-between gap-2 px-4">
+          <div className="flex items-center gap-2 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label={t.openSidebar}
+              aria-expanded={sidebarOpen}
+              className="rounded-lg p-2 text-muted hover:bg-moss-soft hover:text-ink"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <button type="button" onClick={startNewConversation} className="flex items-center gap-2" aria-label={t.newChat}>
+              <Logo className="h-7 w-7" />
+              <span className="font-display text-lg font-bold">Dilo</span>
+            </button>
           </div>
+          <p className="hidden truncate text-sm text-muted lg:block">{view === "journal" ? t.navJournal : active?.title ?? t.tagline}</p>
 
           <div className="flex items-center gap-1 sm:gap-2">
             <ModesMenu t={t} mode={mode} onModeChange={setMode} support={support} onSupportChange={setSupport} />
@@ -445,7 +451,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
       </header>
 
       <main className="relative flex-1" aria-live={view === "chat" ? "polite" : undefined}>
-        <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="mx-auto max-w-6xl px-4 py-8">
           {view === "journal" ? (
             <JournalView
               t={t}
@@ -465,7 +471,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
           ) : (
             <>
               {isEmpty ? (
-                <section className="pt-2 sm:pt-12">
+                <section className="mx-auto max-w-3xl pt-2 sm:pt-12">
                   <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.1] sm:text-5xl">{t.welcomeTitle}</h1>
                   <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">{t.welcomeBody}</p>
 
@@ -554,6 +560,8 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
           </div>
         </footer>
       )}
+
+      </div>
 
       <Dialog open={panelOpen} onClose={() => setPanelOpen(false)} title={t.openPanel} closeLabel={t.close} variant="side" dir={dir}>
         <SettingsPanel
