@@ -28,9 +28,6 @@
   },
   "include": [
     "src",
-    "server",
-    "api",
-    "shared",
     "tests",
     "vite.config.ts"
   ]

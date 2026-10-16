@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Vazirmatn:wght@400..700&display=swap');
+/* Fonts are self-hosted (see main.tsx). Loading them from Google's servers would send visitors' IP addresses to Google. */
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -11,7 +11,6 @@
   --font-sans: "Libre Baskerville", "Vazirmatn", Georgia, serif;
   --font-serif: "Libre Baskerville", "Vazirmatn", Georgia, serif;
   --font-display: "Playfair Display", "Vazirmatn", Georgia, serif;
-  --font-ui: "Inter", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
 
   /* Original Dilo palette: butter yellow with olive-butter accent */
   --color-butter-50: #fffdf0;
@@ -126,4 +125,26 @@
   30% {
     opacity: 1;
   }
+}
+
+/* Legal pages */
+.legal-prose {
+  @apply text-sm leading-relaxed text-ink;
+}
+.legal-prose h1 {
+  @apply mb-3 font-display text-2xl font-bold;
+}
+.legal-prose h2 {
+  @apply mt-6 mb-2 font-display text-lg font-bold;
+}
+.legal-prose p,
+.legal-prose ul {
+  margin: 0 0 0.75em;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-inline-start: 1.25em;
+}
+.legal-prose li {
+  margin-bottom: 0.3em;
 }

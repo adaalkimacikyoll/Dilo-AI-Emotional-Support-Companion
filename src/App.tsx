@@ -6,7 +6,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BookOpen, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal } from "lucide-react";
 import { cn } from "./lib/utils";
-import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
+import { ChatError, chatWithDilo, deleteModel, getLanguage, isModelDownloaded, isWebGPUAvailable, LANGUAGES, loadModel, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
+import { detectCrisis } from "./lib/crisisDetect";
+import { CONSENT_VERSION } from "./lib/operator";
+import type { LegalPage } from "./lib/legal";
 import { TRANSLATIONS, type LanguageCode, type MoodId, type Strings } from "./lib/translations";
 import { isMoodId } from "./lib/moods";
 import { playReplyChime } from "./lib/sound";
@@ -32,6 +35,9 @@ import { ChatMessage } from "./components/ChatMessage";
 import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
 import { SupportToggle } from "./components/SupportToggle";
+import { ConsentGate } from "./components/ConsentGate";
+import { LegalDialog, LegalLinks } from "./components/LegalDialog";
+import { ModelSetup, type ModelStatus } from "./components/ModelSetup";
 
 type View = "chat" | "journal";
 
@@ -48,6 +54,13 @@ const browserLanguage = (): LanguageCode => {
   return isLanguage(code) ? code : "en";
 };
 
+interface Consent {
+  version: number;
+  acceptedAt: number;
+}
+const isConsent = (v: unknown): v is Consent | null =>
+  v === null || (!!v && typeof v === "object" && typeof (v as Consent).version === "number" && typeof (v as Consent).acceptedAt === "number");
+
 const viewFromHash = (): View => (window.location.hash === "#journal" ? "journal" : "chat");
 
 function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (m: Mode) => void }) {
@@ -61,7 +74,7 @@ function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (
           aria-checked={mode === m}
           title={m === "friendly" ? t.friendlyHint : t.psychologistHint}
           onClick={() => onChange(m)}
-          className={cn("rounded-full px-3 py-1 text-sm transition-colors", mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink")}
+          className={cn("whitespace-nowrap rounded-full px-3 py-1 text-sm transition-colors", mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink")}
         >
           {m === "friendly" ? t.friendly : t.psychologist}
         </button>
@@ -70,12 +83,65 @@ function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (
   );
 }
 
+/**
+ * Entry point. Until the user has given every consent, only the consent screen and the legal pages exist:
+ * no model is checked or downloaded and no other data is created.
+ */
 export default function App() {
+  const [consent, setConsent] = usePersistentState<Consent | null>("dilo.consent", null, isConsent);
   const [language, setLanguage] = usePersistentState<LanguageCode>("dilo.language", browserLanguage, isLanguage);
+  const [theme, setTheme] = usePersistentState<Theme>("dilo.theme", "system", isTheme);
+  const [legalPage, setLegalPage] = useState<LegalPage | null>(null);
+
+  const t = TRANSLATIONS[language];
+  const dir = getLanguage(language).rtl ? "rtl" : "ltr";
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.documentElement.dir = dir;
+  }, [language, dir]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => document.documentElement.classList.toggle("dark", theme === "dark" || (theme === "system" && media.matches));
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [theme]);
+
+  const hasConsent = consent !== null && consent.version === CONSENT_VERSION;
+
+  return (
+    <>
+      {hasConsent ? (
+        <DiloApp language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} onOpenLegal={setLegalPage} />
+      ) : (
+        <ConsentGate
+          t={t}
+          language={language}
+          dir={dir}
+          onLanguageChange={setLanguage}
+          onAccept={() => setConsent({ version: CONSENT_VERSION, acceptedAt: Date.now() })}
+          onOpenLegal={setLegalPage}
+        />
+      )}
+      <LegalDialog t={t} language={language} page={legalPage} onClose={() => setLegalPage(null)} />
+    </>
+  );
+}
+
+interface DiloAppProps {
+  language: LanguageCode;
+  setLanguage: (code: LanguageCode) => void;
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  onOpenLegal: (page: LegalPage) => void;
+}
+
+function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAppProps) {
   const [mode, setMode] = usePersistentState<Mode>("dilo.mode", "friendly", isMode);
   const [support, setSupport] = usePersistentState<SupportStyle>("dilo.support", "tips", isSupport);
   const [mood, setMood] = usePersistentState<MoodId | null>("dilo.mood", null, isMoodOrNull);
-  const [theme, setTheme] = usePersistentState<Theme>("dilo.theme", "system", isTheme);
   const [textSize, setTextSize] = usePersistentState<TextSize>("dilo.textSize", "medium", isTextSize);
   const [sound, setSound] = usePersistentState<boolean>("dilo.sound", false, (v): v is boolean => typeof v === "boolean");
   const [conversations, setConversations] = usePersistentState<Conversation[]>("dilo.conversations", migrateLegacyConversation, isConversations);
@@ -89,6 +155,8 @@ export default function App() {
   const [errorFor, setErrorFor] = useState<{ id: string; kind: ChatErrorKind } | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [crisisOpen, setCrisisOpen] = useState(false);
+  const [modelStatus, setModelStatus] = useState<ModelStatus>({ state: "checking" });
+  const [streaming, setStreaming] = useState<{ conversationId: string; text: string } | null>(null);
 
   const lastMessageRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -125,21 +193,43 @@ export default function App() {
     setViewState(next);
   };
 
-  useEffect(() => {
-    document.documentElement.lang = language;
-    document.documentElement.dir = dir;
-  }, [language, dir]);
+  const startModel = useCallback(() => {
+    setModelStatus({ state: "loading", progress: 0 });
+    loadModel((progress) => setModelStatus({ state: "loading", progress }))
+      .then(() => setModelStatus({ state: "ready" }))
+      .catch((e) => {
+        const kind: ChatErrorKind = e instanceof ChatError ? e.kind : "download_failed";
+        setModelStatus(kind === "unsupported" ? { state: "unsupported" } : { state: "error", kind });
+      });
+  }, []);
 
+  // Nothing is downloaded automatically: a cached model is loaded from the device, otherwise we wait for a click.
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => {
-      const dark = theme === "dark" || (theme === "system" && media.matches);
-      document.documentElement.classList.toggle("dark", dark);
+    let cancelled = false;
+    (async () => {
+      if (!(await isWebGPUAvailable())) return void (!cancelled && setModelStatus({ state: "unsupported" }));
+      if (await isModelDownloaded()) {
+        if (!cancelled) startModel();
+      } else if (!cancelled) setModelStatus({ state: "not_downloaded" });
+    })();
+    return () => {
+      cancelled = true;
     };
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
-  }, [theme]);
+  }, [startModel]);
+
+  const deleteAllData = async () => {
+    if (!confirm(t.deleteAllConfirm)) return;
+    await deleteModel();
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("dilo."))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {
+      /* ignore */
+    }
+    window.location.hash = "";
+    window.location.reload();
+  };
 
   // Keep the newest content in view: the start of Dilo's reply, or the bottom after the user sends.
   useEffect(() => {
@@ -166,20 +256,21 @@ export default function App() {
     async (conversationId: string, history: StoredMessage[]) => {
       setLoadingFor(conversationId);
       setErrorFor(null);
+      setStreaming({ conversationId, text: "" });
       try {
-        const reply = await chatWithDilo({
-          history: history.map((m) => ({ role: m.role, text: m.text })),
-          language,
-          mode,
-          support,
-          mood,
-        });
-        appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis, timestamp: Date.now() });
+        const reply = await chatWithDilo(
+          { history: history.map((m) => ({ role: m.role, text: m.text })), language, mode, support, mood },
+          (text) => setStreaming({ conversationId, text }),
+        );
+        // If the keyword check already showed crisis lines under the user's message, don't repeat them.
+        const alreadyShown = !!history[history.length - 1]?.crisis;
+        appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis && !alreadyShown, timestamp: Date.now() });
         if (sound) playReplyChime();
       } catch (e) {
-        setErrorFor({ id: conversationId, kind: e instanceof ChatError ? e.kind : "unknown" });
+        setErrorFor({ id: conversationId, kind: e instanceof ChatError ? e.kind : "generation_failed" });
       } finally {
         setLoadingFor(null);
+        setStreaming(null);
       }
     },
     [language, mode, support, mood, sound, appendMessage],
@@ -187,8 +278,8 @@ export default function App() {
 
   const send = (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
-    if (!text || loadingFor) return;
-    const userMessage: StoredMessage = { id: newId(), role: "user", text, timestamp: Date.now() };
+    if (!text || loadingFor || modelStatus.state !== "ready") return;
+    const userMessage: StoredMessage = { id: newId(), role: "user", text, timestamp: Date.now(), ...(detectCrisis(text) ? { crisis: true } : {}) };
 
     let conversationId: string;
     if (active) {
@@ -236,6 +327,7 @@ export default function App() {
   };
 
   const isEmpty = messages.length === 0;
+  const modelReady = modelStatus.state === "ready";
   const navItems: { id: View; label: string; icon: typeof MessageCircle }[] = [
     { id: "chat", label: t.navChat, icon: MessageCircle },
     { id: "journal", label: t.navJournal, icon: BookOpen },
@@ -244,13 +336,13 @@ export default function App() {
   return (
     <div dir={dir} className="flex h-dvh flex-col bg-paper text-ink">
       <header className="sticky top-0 z-20 border-b border-line bg-paper/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-3xl items-center justify-between gap-2 px-4">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between gap-2 px-4">
           <div className="flex items-center gap-3 sm:gap-5">
             <button type="button" onClick={startNewConversation} className="flex items-center gap-2.5" aria-label={t.newChat}>
               <Logo className="h-8 w-8" />
               <span className="hidden text-start min-[420px]:block">
                 <span className="block font-display text-xl font-bold leading-none">Dilo</span>
-                <span className="hidden text-xs text-muted md:block">{t.tagline}</span>
+                <span className="hidden whitespace-nowrap text-xs text-muted xl:block">{t.tagline}</span>
               </span>
             </button>
 
@@ -262,7 +354,7 @@ export default function App() {
                   onClick={() => setView(id)}
                   aria-current={view === id ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-colors",
+                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm transition-colors",
                     view === id ? "bg-moss-soft font-semibold text-ink" : "text-muted hover:text-ink",
                   )}
                 >
@@ -275,7 +367,7 @@ export default function App() {
 
           <div className="flex items-center gap-1 sm:gap-2">
             {view === "chat" && (
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <ModeSwitch t={t} mode={mode} onChange={setMode} />
               </div>
             )}
@@ -283,11 +375,11 @@ export default function App() {
             <button
               type="button"
               onClick={() => setCrisisOpen(true)}
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm font-medium text-alert hover:bg-alert-soft"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-medium text-alert hover:bg-alert-soft"
             >
               <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden lg:inline">{t.getHelp}</span>
-              <span className="sr-only lg:hidden">{t.getHelp}</span>
+              <span className="hidden xl:inline">{t.getHelp}</span>
+              <span className="sr-only xl:hidden">{t.getHelp}</span>
             </button>
 
             <button
@@ -323,9 +415,15 @@ export default function App() {
             />
           ) : (
             <>
-              <div className="mb-6 flex justify-center md:hidden">
+              <div className="mb-6 flex justify-center lg:hidden">
                 <ModeSwitch t={t} mode={mode} onChange={setMode} />
               </div>
+
+              {modelStatus.state !== "ready" && modelStatus.state !== "checking" && (
+                <div className="mb-8">
+                  <ModelSetup t={t} status={modelStatus} onDownload={startModel} />
+                </div>
+              )}
 
               {isEmpty ? (
                 <section className="pt-2 sm:pt-12">
@@ -343,7 +441,8 @@ export default function App() {
                         key={text}
                         type="button"
                         onClick={() => send(text)}
-                        className="rounded-lg border border-dashed border-line px-3 py-2 text-sm text-ink hover:border-moss/60 hover:bg-moss-soft"
+                        disabled={!modelReady}
+                        className="rounded-lg disabled:cursor-not-allowed disabled:opacity-50 border border-dashed border-line px-3 py-2 text-sm text-ink hover:border-moss/60 hover:bg-moss-soft"
                       >
                         {text}
                       </button>
@@ -358,7 +457,16 @@ export default function App() {
                     </div>
                   ))}
 
-                  {isLoading && (
+                  {isLoading && streaming?.text && (
+                    <ChatMessage
+                      message={{ id: "streaming", role: "model", text: streaming.text, timestamp: Date.now() }}
+                      t={t}
+                      language={language}
+                      textSize={textSize}
+                    />
+                  )}
+
+                  {isLoading && !streaming?.text && (
                     <div className="flex items-center gap-3" role="status">
                       <Logo className="h-7 w-7" />
                       <span className="sr-only">{t.typing}</span>
@@ -373,7 +481,7 @@ export default function App() {
                   {error && active && (
                     <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-alert/30 bg-alert-soft px-4 py-3 text-sm">
                       <span>{t.errors[error]}</span>
-                      {error !== "missing_key" && error !== "bad_request" && (
+                      {error !== "unsupported" && error !== "not_ready" && (
                         <button
                           type="button"
                           onClick={() => requestReply(active.id, messages)}
@@ -390,6 +498,7 @@ export default function App() {
             </>
           )}
           <div ref={bottomRef} />
+          {view === "journal" && <LegalLinks t={t} onOpen={onOpenLegal} className="mt-12" />}
         </div>
       </main>
 
@@ -397,8 +506,9 @@ export default function App() {
         <footer className="border-t border-line bg-paper">
           <div className="mx-auto max-w-3xl px-4 pb-4 pt-3">
             <SupportToggle t={t} value={support} onChange={setSupport} />
-            <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null} speechLocale={lang.speechLocale} />
+            <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null || !modelReady} />
             <p className="mt-2 text-center text-xs text-muted">{t.disclaimer}</p>
+            <LegalLinks t={t} onOpen={onOpenLegal} className="mt-1" />
           </div>
         </footer>
       )}
@@ -417,6 +527,11 @@ export default function App() {
           sound={sound}
           onSoundChange={setSound}
           onNewConversation={startNewConversation}
+          onDeleteAll={deleteAllData}
+          onOpenLegal={(page) => {
+            setPanelOpen(false);
+            onOpenLegal(page);
+          }}
         />
       </Dialog>
 

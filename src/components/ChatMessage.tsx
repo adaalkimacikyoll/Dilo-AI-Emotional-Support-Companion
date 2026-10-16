@@ -47,6 +47,7 @@ export function ChatMessage({
           {message.text}
         </div>
         <time className="px-1 text-xs text-muted">{time}</time>
+        {message.crisis && <CrisisCard t={t} language={language} />}
       </div>
     );
   }
@@ -59,18 +60,23 @@ export function ChatMessage({
         <div className={cn("dilo-prose w-fit max-w-full sm:max-w-[85%] rounded-2xl rounded-ss-none border border-line bg-surface px-4 py-3 shadow-sm", SIZE[textSize])}>
           <Markdown>{message.text}</Markdown>
         </div>
-        {message.crisis && (
-          <div className="rounded-xl border border-alert/30 bg-alert-soft p-4">
-            <p className="mb-3 flex items-start gap-2 text-sm font-medium text-ink">
-              <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-alert" aria-hidden="true" />
-              {t.crisisInline}
-            </p>
-            <p className="mb-4 text-sm text-ink">{t.crisisEmergency}</p>
-            <CrisisResources t={t} language={language} compact />
-          </div>
-        )}
+        {message.crisis && <CrisisCard t={t} language={language} />}
         <time className="block text-xs text-muted">{time}</time>
       </div>
+    </div>
+  );
+}
+
+/** Shown under any message that signals risk, whether flagged by the keyword check or by the model. */
+function CrisisCard({ t, language }: { t: Strings; language: LanguageCode }) {
+  return (
+    <div role="note" className="mt-1 w-full rounded-xl border border-alert/30 bg-alert-soft p-4 text-start">
+      <p className="mb-3 flex items-start gap-2 text-sm font-medium text-ink">
+        <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-alert" aria-hidden="true" />
+        {t.crisisInline}
+      </p>
+      <p className="mb-4 text-sm text-ink">{t.crisisEmergency}</p>
+      <CrisisResources t={t} language={language} compact />
     </div>
   );
 }

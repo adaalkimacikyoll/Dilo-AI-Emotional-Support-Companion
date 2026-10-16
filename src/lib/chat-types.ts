@@ -1,4 +1,4 @@
-/** Types and constants shared by the browser app and the server function. */
+/** Types and limits for Dilo's on-device chat. */
 
 export const LANGUAGE_CODES = ["en", "tr", "de", "fr", "es", "ar", "fa"] as const;
 export type LanguageCode = (typeof LANGUAGE_CODES)[number];
@@ -26,14 +26,12 @@ export interface ChatRequest {
   mood: MoodId | null;
 }
 
-export type ChatErrorKind = "missing_key" | "invalid_key" | "quota" | "rate_limited" | "bad_request" | "network" | "unknown";
-
-export type ChatResponse = { ok: true; text: string; crisis: boolean } | { ok: false; error: ChatErrorKind };
+export type ChatErrorKind = "unsupported" | "not_ready" | "download_failed" | "out_of_memory" | "generation_failed";
 
 export const LIMITS = {
-  maxTurns: 40,
   maxCharsPerTurn: 4000,
-  maxTotalChars: 40000,
-  /** Turns actually sent to the model. */
-  contextTurns: 30,
+  /** The on-device model has a 4k-token context window; keep history well inside it. */
+  maxTotalChars: 6000,
+  contextTurns: 12,
+  maxReplyTokens: 600,
 };

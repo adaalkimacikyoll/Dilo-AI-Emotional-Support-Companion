@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
-import { Footprints, Coffee, Lightbulb, SquarePen } from "lucide-react";
+import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { LANGUAGES } from "../lib/api";
+import { LANGUAGES, MODEL } from "../lib/api";
+import type { LegalPage } from "../lib/legal";
+import { LegalLinks } from "./LegalDialog";
 import { MoodPicker } from "./MoodPicker";
 import type { LanguageCode, MoodId, Strings } from "../lib/translations";
 
@@ -21,6 +23,8 @@ interface Props {
   sound: boolean;
   onSoundChange: (on: boolean) => void;
   onNewConversation: () => void;
+  onDeleteAll: () => void;
+  onOpenLegal: (page: LegalPage) => void;
 }
 
 function Segmented<T extends string>({
@@ -164,6 +168,21 @@ export function SettingsPanel(p: Props) {
             className="relative h-6 w-10 shrink-0 rounded-full bg-line transition-colors peer-checked:bg-moss peer-focus-visible:outline-2 peer-focus-visible:outline-moss after:absolute after:start-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-surface after:shadow after:transition-transform peer-checked:after:translate-x-4 rtl:peer-checked:after:-translate-x-4"
           />
         </label>
+      </section>
+
+      <section aria-labelledby="privacy-heading" className="space-y-4 border-t border-line pt-6">
+        <h3 id="privacy-heading" className="font-display text-lg font-bold text-ink">
+          {t.privacySection}
+        </h3>
+        <p className="flex items-start gap-2 text-sm text-muted">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss" aria-hidden="true" />
+          {t.aiModelInfo.replace("{model}", MODEL.name).replace("{license}", MODEL.license)}
+        </p>
+        <LegalLinks t={t} onOpen={p.onOpenLegal} className="justify-start" />
+        <button type="button" onClick={p.onDeleteAll} className="flex items-center gap-2 text-sm font-medium text-alert hover:underline">
+          <Trash2 className="h-4 w-4" aria-hidden="true" />
+          {t.deleteAllData}
+        </button>
       </section>
 
       <section className="border-t border-line pt-6">
