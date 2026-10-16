@@ -101,6 +101,8 @@ Dilo ist ein kostenloser KI-Begleiter für emotionales Wohlbefinden. Dilo ist **
 
 Dilo ist nicht für Notfälle geeignet. In einer akuten Krise oder bei Gefahr für dich oder andere wähle sofort den Notruf **112** oder wende dich an die TelefonSeelsorge (0800 111 0 111 oder 0800 111 0 222, kostenlos, rund um die Uhr).
 
+Äußerst du in einem Gespräch die Absicht, einen anderen Menschen zu töten oder ernsthaft zu verletzen, zeigt Dilo Notrufnummern an und beendet dieses Gespräch dauerhaft; es kann nicht fortgesetzt werden. Diese Erkennung erfolgt automatisch (durch eine Wortprüfung auf deinem Gerät und durch das KI-Modell) und kann sich irren. Es wird dabei niemand benachrichtigt und nichts an Dritte gemeldet.
+
 ## 4. Mindestalter
 
 Die Nutzung ist nur Personen ab 18 Jahren gestattet.
@@ -224,6 +226,8 @@ Dilo is a free AI companion for emotional wellbeing. Dilo is **not a psychologis
 ## 3. Not an emergency service
 
 Dilo is not suitable for emergencies. In an acute crisis, or if you or others are in danger, call the emergency number **112** immediately, or contact TelefonSeelsorge (0800 111 0 111 or 0800 111 0 222, free, 24/7).
+
+If you state in a conversation that you intend to kill or seriously hurt another person, Dilo shows emergency numbers and closes that conversation for good; it cannot be continued. This detection is automatic (a word check on your device and the AI model) and can be wrong. Nobody is notified and nothing is reported to third parties.
 
 ## 4. Minimum age
 

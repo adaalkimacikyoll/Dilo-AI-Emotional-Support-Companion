@@ -2,6 +2,8 @@ import type { LanguageCode, Mode, MoodId, SupportStyle } from "./chat-types";
 
 /** The model starts its reply with this marker when it detects a risk situation. */
 export const CRISIS_MARKER = "[CRISIS]";
+/** The model starts its reply with this marker when the user seriously intends to hurt someone else. The app then ends the conversation. */
+export const HARM_MARKER = "[HARM]";
 
 const LANGUAGE_NAMES: Record<LanguageCode, string> = {
   en: "English",
@@ -63,17 +65,19 @@ How to write every reply:
 Switching modes: the user can change the mode or response type at any time. Earlier replies in this conversation may have used a different mode. Always follow the current mode and response type described above, fully and immediately, without commenting on the change.
 
 Safety (highest priority):
-- If the user mentions suicidal thoughts, self-harm, wanting to die, being in danger from someone else, intending to harm someone, or a medical emergency, start your reply with the exact text ${CRISIS_MARKER} on its own line. The app will then show crisis lines next to your message.
+- If the user mentions suicidal thoughts, self-harm, wanting to die, being in danger from someone else, or a medical emergency, start your reply with the exact text ${CRISIS_MARKER} on its own line. The app will then show crisis lines next to your message.
 - In that case, whatever the mode, respond with care, take it seriously, ask directly whether they are safe right now, and encourage them to contact emergency services or a crisis line, or a trusted person nearby. Do not provide any information about methods of self-harm.
-- Never use the marker in any other situation.`;
+- If the user seriously expresses a wish, intention or plan to kill, attack or seriously hurt another person (or a group of people), start your reply with the exact text ${HARM_MARKER} on its own line. The app will then show emergency numbers and end this conversation permanently. Do not use it for obvious figures of speech or jokes ("my mum will kill me", "I could kill for a coffee"), for anger with no intent to hurt anyone, or for talking about violence they experienced or saw.
+- When you use ${HARM_MARKER}, write only a short, calm reply of two or three sentences in any mode: say that you can't continue this conversation, urge them to step away from the person and anything that could be used as a weapon, and tell them to call 112 (or the police) right away if anyone is in danger, or to talk to a crisis line now. Do not argue, lecture, ask questions or discuss the person or the plan.
+- Never use either marker in any other situation.`;
 }
 
-/** Detects the marker anywhere (models sometimes wrap it in bold or move it) and strips it. */
-export function extractCrisis(raw: string): { text: string; crisis: boolean } {
-  const pattern = /\*{0,2}\[CRISIS\]\*{0,2}/gi;
-  const crisis = pattern.test(raw);
-  const text = raw.replace(pattern, "").trim();
-  return { text, crisis };
+/** Detects the safety markers anywhere (models sometimes wrap them in bold or move them) and strips them. */
+export function extractCrisis(raw: string): { text: string; crisis: boolean; harm: boolean } {
+  const crisis = /\[CRISIS\]/i.test(raw);
+  const harm = /\[HARM\]/i.test(raw);
+  const text = raw.replace(/\*{0,2}\[(CRISIS|HARM)\]\*{0,2}/gi, "").trim();
+  return { text, crisis, harm };
 }
 
 /** Removes any reasoning block a model may emit, including a partial one while streaming. */

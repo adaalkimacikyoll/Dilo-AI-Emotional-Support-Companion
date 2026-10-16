@@ -1,5 +1,6 @@
 import { LANGUAGE_CODES, LIMITS, MODES, MOOD_IDS, SUPPORT_STYLES, type ChatErrorKind, type ChatRequest, type ChatTurn } from "../src/lib/chat-types";
 import { getSystemInstruction } from "../src/lib/prompt";
+import { detectHarmToOthers } from "../src/lib/crisisDetect";
 
 /**
  * Dilo's chat endpoint. It forwards the conversation to an OpenAI-compatible model API hosted in the EU
@@ -148,6 +149,9 @@ export async function handleRequest(
   }
   const chat = parseChatRequest(body);
   if (!chat) return fail("bad_request");
+  // A conversation in which the user stated an intent to hurt someone is closed for good; the app never sends one,
+  // and the server refuses it too.
+  if (chat.history.some((t) => t.role === "user" && detectHarmToOthers(t.text))) return fail("bad_request");
   if (!env.AI_API_KEY) return fail("not_configured");
 
   let upstream: Response;

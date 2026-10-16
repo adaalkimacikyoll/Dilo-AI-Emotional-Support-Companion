@@ -44,6 +44,10 @@ export interface Strings {
   crisisLinesTitle: string;
   crisisFind: string;
   crisisInline: string;
+  harmInline: string;
+  harmTalk: string;
+  harmAutoReply: string;
+  harmClosed: string;
   disclaimer: string;
   navChat: string;
   navJournal: string;
@@ -189,6 +193,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "Free, confidential crisis lines",
     crisisFind: "Find a helpline in your country",
     crisisInline: "You don't have to go through this alone. Trained people are available right now.",
+    harmInline: "If anyone is in danger right now, call 112 or the police (110 in Germany) immediately. Hurting someone is never a way out, and it can't be undone.",
+    harmTalk: "If you're having thoughts of hurting someone, you can talk to a trained person right now, anonymously and free of charge:",
+    harmAutoReply: "I can't continue this conversation. Please step away from the person and from anything that could be used as a weapon. If anyone is in danger, call 112 or the police right now, or talk to a crisis line straight away.",
+    harmClosed: "This conversation has been closed for safety and can't be continued.",
     disclaimer: "Dilo is an AI and can make mistakes. It is not a psychologist and does not replace professional help.",
     navChat: "Chat",
     navJournal: "Journal",
@@ -377,6 +385,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "Ücretsiz ve gizli kriz hatları",
     crisisFind: "Ülkendeki destek hattını bul",
     crisisInline: "Bununla tek başına baş etmek zorunda değilsin. Şu anda seni dinleyebilecek eğitimli insanlar var.",
+    harmInline: "Şu anda biri tehlikedeyse hemen 112'yi ya da polisi ara (Almanya'da polis: 110). Birine zarar vermek asla bir çıkış yolu değil ve geri alınamaz.",
+    harmTalk: "Birine zarar verme düşüncelerin varsa şu anda, isimsiz ve ücretsiz olarak eğitimli biriyle konuşabilirsin:",
+    harmAutoReply: "Bu sohbete devam edemem. Lütfen o kişiden ve silah olarak kullanılabilecek her şeyden uzaklaş. Biri tehlikedeyse hemen 112'yi ya da polisi ara, ya da şimdi bir kriz hattıyla konuş.",
+    harmClosed: "Bu sohbet güvenlik nedeniyle kapatıldı ve devam ettirilemez.",
     disclaimer: "Dilo bir yapay zekadır ve hata yapabilir. Psikolog değildir ve profesyonel yardımın yerini tutmaz.",
     navChat: "Sohbet",
     navJournal: "Günlük",
@@ -565,6 +577,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "Kostenlose, vertrauliche Krisentelefone",
     crisisFind: "Hilfe-Telefon in deinem Land finden",
     crisisInline: "Du musst das nicht allein durchstehen. Geschulte Menschen sind jetzt für dich erreichbar.",
+    harmInline: "Wenn gerade jemand in Gefahr ist, ruf sofort 112 oder die Polizei (110) an. Jemanden zu verletzen ist nie ein Ausweg und lässt sich nicht rückgängig machen.",
+    harmTalk: "Wenn du Gedanken hast, jemandem etwas anzutun, kannst du jetzt sofort anonym und kostenlos mit einer geschulten Person sprechen:",
+    harmAutoReply: "Ich kann dieses Gespräch nicht fortsetzen. Bitte geh weg von der Person und von allem, was als Waffe dienen könnte. Wenn jemand in Gefahr ist, ruf jetzt 112 oder die Polizei (110) an, oder sprich sofort mit einem Krisentelefon.",
+    harmClosed: "Dieses Gespräch wurde aus Sicherheitsgründen beendet und kann nicht fortgesetzt werden.",
     disclaimer: "Dilo ist eine KI und kann Fehler machen. Dilo ist kein Psychologe und ersetzt keine professionelle Hilfe.",
     navChat: "Chat",
     navJournal: "Tagebuch",
@@ -753,6 +769,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "Lignes d'écoute gratuites et confidentielles",
     crisisFind: "Trouver une ligne d'écoute dans votre pays",
     crisisInline: "Vous n'avez pas à traverser cela seul. Des personnes formées sont disponibles dès maintenant.",
+    harmInline: "Si quelqu'un est en danger en ce moment, appelez immédiatement le 112 ou la police (17 en France). Faire du mal à quelqu'un n'est jamais une issue, et c'est irréversible.",
+    harmTalk: "Si vous avez des pensées de faire du mal à quelqu'un, vous pouvez parler dès maintenant à une personne formée, anonymement et gratuitement :",
+    harmAutoReply: "Je ne peux pas poursuivre cette conversation. Éloignez-vous de la personne et de tout ce qui pourrait servir d'arme. Si quelqu'un est en danger, appelez le 112 ou la police maintenant, ou parlez tout de suite à une ligne d'écoute.",
+    harmClosed: "Cette conversation a été fermée pour des raisons de sécurité et ne peut pas être poursuivie.",
     disclaimer: "Dilo est une IA et peut se tromper. Dilo n'est pas un psychologue et ne remplace pas une aide professionnelle.",
     navChat: "Discussion",
     navJournal: "Journal",
@@ -941,6 +961,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "Líneas de crisis gratuitas y confidenciales",
     crisisFind: "Encuentra una línea de ayuda en tu país",
     crisisInline: "No tienes que pasar por esto solo. Hay personas formadas disponibles ahora mismo.",
+    harmInline: "Si alguien está en peligro ahora mismo, llama de inmediato al 112 o a la policía. Hacer daño a alguien nunca es una salida, y no se puede deshacer.",
+    harmTalk: "Si tienes pensamientos de hacer daño a alguien, puedes hablar ahora mismo con una persona formada, de forma anónima y gratuita:",
+    harmAutoReply: "No puedo continuar esta conversación. Aléjate de esa persona y de cualquier cosa que pueda usarse como arma. Si alguien está en peligro, llama ahora al 112 o a la policía, o habla de inmediato con una línea de crisis.",
+    harmClosed: "Esta conversación se ha cerrado por seguridad y no se puede continuar.",
     disclaimer: "Dilo es una IA y puede equivocarse. No es un psicólogo y no sustituye la ayuda profesional.",
     navChat: "Chat",
     navJournal: "Diario",
@@ -1129,6 +1153,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "خطوط أزمات مجانية وسرية",
     crisisFind: "ابحث عن خط مساعدة في بلدك",
     crisisInline: "لست مضطرًا لمواجهة هذا وحدك. هناك أشخاص مدرَّبون متاحون الآن.",
+    harmInline: "إذا كان أي شخص في خطر الآن، اتصل فورًا برقم 112 أو بالشرطة (110 في ألمانيا). إيذاء أي شخص ليس حلًا أبدًا، ولا يمكن التراجع عنه.",
+    harmTalk: "إذا راودتك أفكار بإيذاء شخص ما، يمكنك التحدث الآن مع شخص مدرَّب، دون الكشف عن هويتك ومجانًا:",
+    harmAutoReply: "لا يمكنني متابعة هذه المحادثة. ابتعد من فضلك عن ذلك الشخص وعن أي شيء يمكن استخدامه كسلاح. إذا كان أي شخص في خطر، اتصل الآن برقم 112 أو بالشرطة، أو تحدث فورًا مع خط أزمات.",
+    harmClosed: "تم إغلاق هذه المحادثة لأسباب تتعلق بالسلامة ولا يمكن متابعتها.",
     disclaimer: "ديلو ذكاء اصطناعي وقد يخطئ. ليس أخصائيًا نفسيًا ولا يغني عن المساعدة المتخصصة.",
     navChat: "المحادثة",
     navJournal: "اليوميات",
@@ -1317,6 +1345,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisLinesTitle: "خطوط بحران رایگان و محرمانه",
     crisisFind: "خط کمک در کشورت را پیدا کن",
     crisisInline: "لازم نیست این را تنها پشت سر بگذاری. همین حالا افراد آموزش‌دیده در دسترس هستند.",
+    harmInline: "اگر همین حالا کسی در خطر است، فوراً با ۱۱۲ یا پلیس تماس بگیر (۱۱۰ در آلمان و ایران). آسیب زدن به کسی هرگز راه چاره نیست و قابل جبران نیست.",
+    harmTalk: "اگر فکر آسیب زدن به کسی را داری، همین حالا می‌توانی به‌صورت ناشناس و رایگان با یک فرد آموزش‌دیده صحبت کنی:",
+    harmAutoReply: "نمی‌توانم این گفتگو را ادامه بدهم. لطفاً از آن شخص و از هر چیزی که می‌تواند به‌عنوان سلاح استفاده شود دور شو. اگر کسی در خطر است، همین حالا با ۱۱۲ یا پلیس تماس بگیر، یا فوراً با یک خط بحران صحبت کن.",
+    harmClosed: "این گفتگو به دلایل ایمنی بسته شد و قابل ادامه نیست.",
     disclaimer: "دیلو یک هوش مصنوعی است و ممکن است اشتباه کند. روانشناس نیست و جایگزین کمک تخصصی نیست.",
     navChat: "گفتگو",
     navJournal: "دفتر خاطرات",

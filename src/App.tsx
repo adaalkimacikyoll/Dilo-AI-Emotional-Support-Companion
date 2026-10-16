@@ -4,10 +4,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Brain, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal, Smile } from "lucide-react";
+import { BookOpen, Brain, LifeBuoy, Plus, ShieldAlert, MessageCircle, RotateCw, SlidersHorizontal, Smile } from "lucide-react";
 import { cn } from "./lib/utils";
 import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
-import { detectCrisis } from "./lib/crisisDetect";
+import { detectCrisis, detectHarmToOthers } from "./lib/crisisDetect";
 import { CONSENT_VERSION } from "./lib/operator";
 import type { LegalPage } from "./lib/legal";
 import { TRANSLATIONS, type LanguageCode, type Strings } from "./lib/translations";
@@ -301,6 +301,11 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
     [setConversations],
   );
 
+  const closeConversation = useCallback(
+    (conversationId: string, at: number) => setConversations((prev) => prev.map((c) => (c.id === conversationId ? { ...c, closed: at } : c))),
+    [setConversations],
+  );
+
   /** Replies always land in the conversation they belong to, even if the user switched meanwhile. */
   const requestReply = useCallback(
     async (conversationId: string, history: StoredMessage[]) => {
@@ -314,7 +319,9 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
         );
         // If the keyword check already showed crisis lines under the user's message, don't repeat them.
         const alreadyShown = !!history[history.length - 1]?.crisis;
-        appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis && !alreadyShown, mode, timestamp: Date.now() });
+        const now = Date.now();
+        appendMessage(conversationId, { id: newId(), role: "model", text: reply.text, crisis: reply.crisis && !alreadyShown, ...(reply.harm ? { harm: true } : {}), mode, timestamp: now });
+        if (reply.harm) closeConversation(conversationId, now);
         if (sound) playReplyChime();
       } catch (e) {
         setErrorFor({ id: conversationId, kind: e instanceof ChatError ? e.kind : "generation_failed" });
@@ -323,12 +330,12 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
         setStreaming(null);
       }
     },
-    [language, mode, support, mood, sound, appendMessage],
+    [language, mode, support, mood, sound, appendMessage, closeConversation],
   );
 
   const send = (textOverride?: string) => {
     const text = (textOverride ?? input).trim();
-    if (!text || loadingFor) return;
+    if (!text || loadingFor || active?.closed) return;
     followRef.current = true; // sending always brings the newest messages into view
     const userMessage: StoredMessage = { id: newId(), role: "user", text, timestamp: Date.now(), ...(detectCrisis(text) ? { crisis: true } : {}) };
 
@@ -349,6 +356,14 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
       setActiveId(conversationId);
     }
     if (textOverride === undefined) setInput("");
+
+    // A stated intent to hurt someone ends the conversation at once: no AI reply, emergency numbers, closed for good.
+    if (detectHarmToOthers(text)) {
+      const now = userMessage.timestamp + 1;
+      appendMessage(conversationId, { id: newId(), role: "model", text: t.harmAutoReply, harm: true, mode, timestamp: now });
+      closeConversation(conversationId, now);
+      return;
+    }
     void requestReply(conversationId, [...messages, userMessage]);
   };
 
@@ -520,7 +535,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
                     </div>
                   )}
 
-                  {error && active && (
+                  {error && active && !active.closed && (
                     <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-alert/30 bg-alert-soft px-4 py-3 text-sm">
                       <span>{t.errors[error]}</span>
                       {error !== "not_configured" && error !== "bad_request" && (
@@ -546,7 +561,20 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
       {view === "chat" && (
         <footer className="sticky bottom-0 z-10 border-t border-line bg-paper/95 backdrop-blur">
           <div className="mx-auto max-w-3xl px-4 pb-2 pt-2">
-            <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null} />
+            {active?.closed ? (
+              <div role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-alert/30 bg-alert-soft px-4 py-3 text-sm text-ink">
+                <span className="flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 shrink-0 text-alert" aria-hidden="true" />
+                  {t.harmClosed}
+                </span>
+                <button type="button" onClick={startNewConversation} className="flex items-center gap-1.5 rounded-lg bg-moss px-3 py-1.5 font-semibold text-on-accent">
+                  <Plus className="h-4 w-4" aria-hidden="true" />
+                  {t.newChat}
+                </button>
+              </div>
+            ) : (
+              <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null} />
+            )}
             <div className="mt-1.5 flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 text-[11px] leading-tight text-muted">
               <p className="text-center">{t.disclaimer}</p>
               <LegalLinks t={t} onOpen={onOpenLegal} className="text-[11px]" />

@@ -60,9 +60,23 @@ export function ChatMessage({
         <div className={cn("dilo-prose w-fit max-w-full rounded-2xl border border-line bg-surface px-4 py-3 shadow-sm", SIZE[textSize])}>
           <Markdown>{message.text}</Markdown>
         </div>
-        {message.crisis && <CrisisCard t={t} language={language} />}
+        {message.harm ? <HarmCard t={t} language={language} /> : message.crisis && <CrisisCard t={t} language={language} />}
         <time className="block text-[11px] text-muted">{time}</time>
       </div>
+    </div>
+  );
+}
+
+/** Shown when the user stated an intent to hurt someone else. The conversation is closed after this. */
+function HarmCard({ t, language }: { t: Strings; language: LanguageCode }) {
+  return (
+    <div role="alert" className="mt-1 w-full rounded-xl border border-alert/40 bg-alert-soft p-4 text-start">
+      <p className="mb-3 flex items-start gap-2 text-sm font-semibold text-ink">
+        <LifeBuoy className="mt-0.5 h-4 w-4 shrink-0 text-alert" aria-hidden="true" />
+        {t.harmInline}
+      </p>
+      <p className="mb-4 text-sm text-ink">{t.harmTalk}</p>
+      <CrisisResources t={t} language={language} compact />
     </div>
   );
 }

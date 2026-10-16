@@ -46,6 +46,8 @@ async function mockReply(request: ChatRequest, onText: (text: string) => void) {
   if (last.includes("mock-fail")) throw new ChatError("generation_failed");
   const raw = last.includes("mock-crisis")
     ? "[CRISIS]\nI'm really glad you told me. Are you safe right now?"
+    : last.includes("mock-harm")
+    ? "[HARM]\nI can't continue this conversation. Please call 112 if anyone is in danger."
     : `(${request.support}/${request.mode}) That sounds like a lot to carry. What feels heaviest right now?`;
   let shown = "";
   for (const word of raw.split(" ")) {
@@ -57,7 +59,7 @@ async function mockReply(request: ChatRequest, onText: (text: string) => void) {
 }
 
 /** Sends the conversation to Dilo's server and streams the reply through onText. */
-export async function chatWithDilo(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean }> {
+export async function chatWithDilo(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean; harm: boolean }> {
   if (useMock()) return mockReply(request, onText);
 
   let response: Response;
