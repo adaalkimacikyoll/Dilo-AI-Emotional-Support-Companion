@@ -3,28 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, LifeBuoy, MessageCircle, RotateCw, SlidersHorizontal } from "lucide-react";
 import { cn } from "./lib/utils";
 import { ChatError, chatWithDilo, deleteModel, getLanguage, isModelDownloaded, isWebGPUAvailable, LANGUAGES, loadModel, type ChatErrorKind, type Mode, type SupportStyle } from "./lib/api";
 import { detectCrisis } from "./lib/crisisDetect";
 import { CONSENT_VERSION } from "./lib/operator";
 import type { LegalPage } from "./lib/legal";
-import { TRANSLATIONS, type LanguageCode, type MoodId, type Strings } from "./lib/translations";
-import { isMoodId } from "./lib/moods";
+import { TRANSLATIONS, type LanguageCode } from "./lib/translations";
 import { playReplyChime } from "./lib/sound";
-import {
-  isConversations,
-  isEntries,
-  isNotes,
-  migrateLegacyConversation,
-  newId,
-  titleFrom,
-  type Conversation,
-  type JournalEntry,
-  type Note,
-  type StoredMessage,
-} from "./lib/journal";
+import { newId, titleFrom, type Conversation, type StoredMessage } from "./lib/journal";
+import { deleteAccount, saveVault, type Session, type Vault } from "./lib/accounts";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { Logo } from "./components/Logo";
 import { Dialog } from "./components/Dialog";
@@ -34,7 +23,8 @@ import { CrisisResources } from "./components/CrisisResources";
 import { ChatMessage } from "./components/ChatMessage";
 import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
-import { SupportToggle, supportHint } from "./components/SupportToggle";
+import { ModesMenu } from "./components/ModesMenu";
+import { AccountGate } from "./components/AccountGate";
 import { ConsentGate } from "./components/ConsentGate";
 import { LegalDialog, LegalLinks } from "./components/LegalDialog";
 import { ModelSetup, type ModelStatus } from "./components/ModelSetup";
@@ -46,8 +36,6 @@ const isMode = (v: unknown): v is Mode => v === "friendly" || v === "psychologis
 const isSupport = (v: unknown): v is SupportStyle => v === "listen" || v === "tips";
 const isTheme = (v: unknown): v is Theme => v === "light" || v === "dark" || v === "system";
 const isTextSize = (v: unknown): v is TextSize => v === "small" || v === "medium" || v === "large";
-const isMoodOrNull = (v: unknown): v is MoodId | null => v === null || isMoodId(v);
-const isIdOrNull = (v: unknown): v is string | null => v === null || typeof v === "string";
 
 const browserLanguage = (): LanguageCode => {
   const code = navigator.language?.slice(0, 2);
@@ -63,26 +51,6 @@ const isConsent = (v: unknown): v is Consent | null =>
 
 const viewFromHash = (): View => (window.location.hash === "#journal" ? "journal" : "chat");
 
-function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (m: Mode) => void }) {
-  return (
-    <div role="radiogroup" aria-label={t.modeLabel} className="flex w-full rounded-full border border-line bg-surface p-0.5 sm:w-auto">
-      {(["friendly", "psychologist"] as const).map((m) => (
-        <button
-          key={m}
-          type="button"
-          role="radio"
-          aria-checked={mode === m}
-          title={m === "friendly" ? t.friendlyHint : t.psychologistHint}
-          onClick={() => onChange(m)}
-          className={cn("flex-1 rounded-full px-3 py-1 text-center text-sm leading-tight transition-colors sm:flex-none sm:whitespace-nowrap", mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink")}
-        >
-          {m === "friendly" ? t.friendly : t.psychologist}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /**
  * Entry point. Until the user has given every consent, only the consent screen and the legal pages exist:
  * no model is checked or downloaded and no other data is created.
@@ -92,6 +60,8 @@ export default function App() {
   const [language, setLanguage] = usePersistentState<LanguageCode>("dilo.language", browserLanguage, isLanguage);
   const [theme, setTheme] = usePersistentState<Theme>("dilo.theme", "system", isTheme);
   const [legalPage, setLegalPage] = useState<LegalPage | null>(null);
+  // The account key lives only in memory: reloading the page signs the user out.
+  const [session, setSession] = useState<Session | null>(null);
 
   const t = TRANSLATIONS[language];
   const dir = getLanguage(language).rtl ? "rtl" : "ltr";
@@ -113,8 +83,19 @@ export default function App() {
 
   return (
     <>
-      {hasConsent ? (
-        <DiloApp language={language} setLanguage={setLanguage} theme={theme} setTheme={setTheme} onOpenLegal={setLegalPage} />
+      {hasConsent && session ? (
+        <DiloApp
+          key={session.account.id}
+          session={session}
+          onSignOut={() => setSession(null)}
+          language={language}
+          setLanguage={setLanguage}
+          theme={theme}
+          setTheme={setTheme}
+          onOpenLegal={setLegalPage}
+        />
+      ) : hasConsent ? (
+        <AccountGate t={t} language={language} dir={dir} onLanguageChange={setLanguage} onSession={setSession} onOpenLegal={setLegalPage} />
       ) : (
         <ConsentGate
           t={t}
@@ -131,6 +112,8 @@ export default function App() {
 }
 
 interface DiloAppProps {
+  session: Session;
+  onSignOut: () => void;
   language: LanguageCode;
   setLanguage: (code: LanguageCode) => void;
   theme: Theme;
@@ -138,16 +121,57 @@ interface DiloAppProps {
   onOpenLegal: (page: LegalPage) => void;
 }
 
-function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAppProps) {
+function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, onOpenLegal }: DiloAppProps) {
   const [mode, setMode] = usePersistentState<Mode>("dilo.mode", "friendly", isMode);
   const [support, setSupport] = usePersistentState<SupportStyle>("dilo.support", "tips", isSupport);
-  const [mood, setMood] = usePersistentState<MoodId | null>("dilo.mood", null, isMoodOrNull);
   const [textSize, setTextSize] = usePersistentState<TextSize>("dilo.textSize", "medium", isTextSize);
   const [sound, setSound] = usePersistentState<boolean>("dilo.sound", false, (v): v is boolean => typeof v === "boolean");
-  const [conversations, setConversations] = usePersistentState<Conversation[]>("dilo.conversations", migrateLegacyConversation, isConversations);
-  const [activeId, setActiveId] = usePersistentState<string | null>("dilo.activeConversation", null, isIdOrNull);
-  const [entries, setEntries] = usePersistentState<JournalEntry[]>("dilo.journal", [], isEntries);
-  const [notes, setNotes] = usePersistentState<Note[]>("dilo.notes", [], isNotes);
+
+  // Conversations, journal, notes and mood live in the account's encrypted vault.
+  const [vault, setVault] = useState<Vault>(session.vault);
+  const vaultRef = useRef(vault);
+  vaultRef.current = vault;
+  const { setConversations, setActiveId, setEntries, setNotes, setMood } = useMemo(() => {
+    const field =
+      <K extends keyof Vault>(key: K) =>
+      (update: Vault[K] | ((prev: Vault[K]) => Vault[K])) =>
+        setVault((v) => ({ ...v, [key]: typeof update === "function" ? (update as (p: Vault[K]) => Vault[K])(v[key]) : update }));
+    return {
+      setConversations: field("conversations"),
+      setActiveId: field("activeId"),
+      setEntries: field("entries"),
+      setNotes: field("notes"),
+      setMood: field("mood"),
+    };
+  }, []);
+  const { conversations, activeId, entries, notes, mood } = vault;
+
+  // Save shortly after each change, and right away when the page is hidden or closed.
+  useEffect(() => {
+    const id = setTimeout(() => void saveVault(session, vault), 250);
+    return () => clearTimeout(id);
+  }, [vault, session]);
+  useEffect(() => {
+    const flush = () => void saveVault(session, vaultRef.current);
+    const onVisibility = () => document.visibilityState === "hidden" && flush();
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [session]);
+
+  const signOut = async () => {
+    await saveVault(session, vaultRef.current);
+    onSignOut();
+  };
+
+  const removeAccount = () => {
+    if (!confirm(t.deleteAccountConfirm.replace("{name}", session.account.name))) return;
+    deleteAccount(session.account.id);
+    onSignOut();
+  };
 
   const [view, setViewState] = useState<View>(viewFromHash);
   const [input, setInput] = useState("");
@@ -354,26 +378,26 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
                   onClick={() => setView(id)}
                   aria-current={view === id ? "page" : undefined}
                   className={cn(
-                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm transition-colors",
+                    "flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-2 text-sm transition-colors sm:py-1.5",
                     view === id ? "bg-moss-soft font-semibold text-ink" : "text-muted hover:text-ink",
                   )}
                 >
-                  <Icon className="hidden h-4 w-4 min-[400px]:block" aria-hidden="true" />
-                  {label}
+                  <Icon className="h-4 w-4" aria-hidden="true" />
+                  <span className="sr-only sm:not-sr-only">{label}</span>
                 </button>
               ))}
             </nav>
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
+            <ModesMenu t={t} mode={mode} onModeChange={setMode} support={support} onSupportChange={setSupport} />
             <button
               type="button"
               onClick={() => setCrisisOpen(true)}
               className="flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-medium text-alert hover:bg-alert-soft"
             >
               <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-              <span className="hidden min-[400px]:inline">{t.getHelp}</span>
-              <span className="sr-only min-[400px]:hidden">{t.getHelp}</span>
+              <span className="sr-only sm:not-sr-only">{t.getHelp}</span>
             </button>
 
             <button
@@ -494,17 +518,7 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
 
       {view === "chat" && (
         <footer className="border-t border-line bg-paper">
-          <div className="mx-auto max-w-7xl px-4 pb-4 pt-3">
-            <div className="mb-2 space-y-1.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <ModeSwitch t={t} mode={mode} onChange={setMode} />
-                <SupportToggle t={t} value={support} onChange={setSupport} />
-              </div>
-              <p className="text-xs text-muted" aria-live="polite">
-                {supportHint(t, support)}
-              </p>
-              {mode === "psychologist" && <p className="text-xs text-muted">{t.psychologistHint}</p>}
-            </div>
+          <div className="mx-auto max-w-7xl px-4 pb-3 pt-2.5">
             <Composer t={t} value={input} onChange={setInput} onSend={() => send()} disabled={loadingFor !== null || !modelReady} />
             <p className="mt-2 text-center text-xs text-muted">{t.disclaimer}</p>
             <LegalLinks t={t} onOpen={onOpenLegal} className="mt-1" />
@@ -527,6 +541,9 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
           onSoundChange={setSound}
           onNewConversation={startNewConversation}
           onDeleteAll={deleteAllData}
+          accountName={session.account.name}
+          onSignOut={signOut}
+          onDeleteAccount={removeAccount}
           onOpenLegal={(page) => {
             setPanelOpen(false);
             onOpenLegal(page);

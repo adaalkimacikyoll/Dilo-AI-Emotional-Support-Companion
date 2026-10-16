@@ -40,7 +40,7 @@ E-Mail: ${OPERATOR.email}
 
 ## 2. Das Wichtigste in Kürze
 
-- Dilo hat **keine Benutzerkonten, keine Cookies, kein Tracking und keine Analyse-Tools**.
+- Dilo hat **keine Cookies, kein Tracking und keine Analyse-Tools**. Konten existieren nur verschlüsselt auf deinem Gerät, nicht bei uns.
 - Die KI läuft **vollständig auf deinem Gerät**. Deine Nachrichten, Tagebucheinträge und Notizen werden **nicht an uns oder Dritte übertragen**. Wir haben keinen Zugriff darauf.
 - Personenbezogene Daten fallen bei uns nur in technisch notwendigem Umfang beim Abrufen der Website an (Server-Logdateien beim Hoster).
 - Einmalig wird das KI-Modell von Hugging Face heruntergeladen, und zwar erst, nachdem du dies ausdrücklich auslöst.
@@ -51,9 +51,11 @@ Diese Website wird bei Vercel Inc. (USA) gehostet. Beim Aufruf der Website verar
 
 ## 4. Speicherung auf deinem Gerät
 
-Dilo speichert folgende Daten ausschließlich lokal in deinem Browser (Local Storage und Cache Storage): Gespräche, Tagebucheinträge, Notizen, Einstellungen, deine Einwilligung (mit Zeitpunkt und Version) sowie die Dateien des KI-Modells. Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Da deine Inhalte Angaben zu deiner Gesundheit enthalten können, erfolgt ihre Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).
+Dilo speichert folgende Daten ausschließlich lokal in deinem Browser (Local Storage und Cache Storage): dein Konto mit Gesprächen, Tagebucheinträgen, Notizen und Stimmung (verschlüsselt), Einstellungen, deine Einwilligung (mit Zeitpunkt und Version) sowie die Dateien des KI-Modells. Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Da deine Inhalte Angaben zu deiner Gesundheit enthalten können, erfolgt ihre Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).
 
-Gespräche, die du mit einem Passwort sperrst, werden auf deinem Gerät mit AES-256-GCM verschlüsselt; der Schlüssel wird mit PBKDF2 aus deinem Passwort abgeleitet. Ohne das Passwort können sie nicht wiederhergestellt werden.
+Deine Inhalte (Gespräche, Tagebucheinträge, Notizen und Stimmung) werden in einem Konto gespeichert, das nur auf diesem Gerät existiert. Im Klartext gespeichert werden lediglich der von dir gewählte Kontoname und technische Werte (Salt). Alle Inhalte werden mit AES-256-GCM verschlüsselt; der Schlüssel wird mit PBKDF2 (310.000 Iterationen) aus deinem Passwort abgeleitet und nur während der Sitzung im Arbeitsspeicher gehalten. Dein Passwort wird nicht gespeichert. Es gibt keine Passwort-Wiederherstellung: Ohne das Passwort können die Inhalte weder von dir noch von uns wiederhergestellt werden. Konten werden nicht mit anderen Geräten synchronisiert.
+
+Gespräche, die du zusätzlich mit einem eigenen Passwort sperrst, werden auf dieselbe Weise ein weiteres Mal verschlüsselt.
 
 Du kannst alle Daten jederzeit in den Einstellungen unter „Alle meine Daten löschen und Einwilligung widerrufen“ oder über die Einstellungen deines Browsers löschen.
 
@@ -113,7 +115,7 @@ Dilo wird ohne Gewähr für eine ständige Verfügbarkeit bereitgestellt. Die KI
 
 ## 8. Deine Daten
 
-Alle Inhalte werden nur auf deinem Gerät gespeichert. Wir können sie weder einsehen noch wiederherstellen. Beim Löschen der Browserdaten gehen sie verloren; gesperrte Gespräche lassen sich ohne Passwort nicht wiederherstellen. Einzelheiten in der Datenschutzerklärung.
+Alle Inhalte werden nur verschlüsselt in deinem Konto auf deinem Gerät gespeichert. Wir können sie weder einsehen noch wiederherstellen. Beim Löschen der Browserdaten gehen sie verloren; ohne dein Passwort lassen sie sich nicht wiederherstellen. Du bist für die sichere Aufbewahrung deines Passworts verantwortlich. Einzelheiten in der Datenschutzerklärung.
 
 ## 9. Haftung
 
@@ -158,7 +160,7 @@ Email: ${OPERATOR.email}
 
 ## 2. Summary
 
-- Dilo has **no user accounts, no cookies, no tracking and no analytics**.
+- Dilo has **no cookies, no tracking and no analytics**. Accounts exist only, encrypted, on your device, never with us.
 - The AI runs **entirely on your device**. Your messages, journal entries and notes are **never sent to us or to third parties**. We have no access to them.
 - The only personal data we process is what is technically necessary to deliver the website (server log files at our hosting provider).
 - The AI model is downloaded once from Hugging Face, and only after you explicitly start the download.
@@ -169,9 +171,11 @@ This website is hosted by Vercel Inc. (USA). When you visit it, the host process
 
 ## 4. Storage on your device
 
-Dilo stores the following only in your browser (Local Storage and Cache Storage): conversations, journal entries, notes, settings, your consent (with time and version) and the AI model files. This storage is strictly necessary for the service you request (§ 25(2) no. 2 TDDDG). Because your content may include information about your health, it is processed on the basis of your explicit consent (Art. 9(2)(a) GDPR).
+Dilo stores the following only in your browser (Local Storage and Cache Storage): your account with conversations, journal entries, notes and mood (encrypted), settings, your consent (with time and version) and the AI model files. This storage is strictly necessary for the service you request (§ 25(2) no. 2 TDDDG). Because your content may include information about your health, it is processed on the basis of your explicit consent (Art. 9(2)(a) GDPR).
 
-Conversations you lock with a password are encrypted on your device with AES-256-GCM, using a key derived from your password with PBKDF2. They cannot be recovered without the password.
+Your content (conversations, journal entries, notes and mood) is stored in an account that exists only on this device. Only the account name you choose and technical values (a salt) are stored in plain text. All content is encrypted with AES-256-GCM using a key derived from your password with PBKDF2 (310,000 iterations), which is kept in memory only for the session. Your password is not stored. There is no password recovery: without the password, neither you nor we can restore the content. Accounts are not synchronised with other devices.
+
+Conversations you additionally lock with their own password are encrypted a second time in the same way.
 
 You can delete all data at any time in the settings under "Delete all my data and withdraw consent", or through your browser settings.
 
@@ -231,7 +235,7 @@ Dilo is provided without any guarantee of continuous availability. The AI requir
 
 ## 8. Your data
 
-All content is stored only on your device. We can neither view nor restore it. It is lost when you clear your browser data; locked conversations cannot be recovered without their password. See the privacy policy for details.
+All content is stored only, encrypted, in your account on your device. We can neither view nor restore it. It is lost when you clear your browser data and cannot be recovered without your password. You are responsible for keeping your password safe. See the privacy policy for details.
 
 ## 9. Liability
 

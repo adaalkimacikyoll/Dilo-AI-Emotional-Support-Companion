@@ -18,7 +18,7 @@ export function Composer({ t, value, onChange, onSend, disabled }: Props) {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = Math.min(el.scrollHeight, 168) + "px";
+    el.style.height = Math.min(el.scrollHeight, 144) + "px";
   }, [value]);
 
   const send = () => onSend();
@@ -27,7 +27,7 @@ export function Composer({ t, value, onChange, onSend, disabled }: Props) {
 
   return (
     <div>
-      <div className="flex items-end gap-2 rounded-2xl border border-line bg-surface p-2 shadow-sm focus-within:border-moss/60">
+      <div className="flex items-end gap-2 rounded-xl border border-line bg-surface p-1.5 shadow-sm focus-within:border-moss/60">
         <label htmlFor="composer" className="sr-only">
           {t.inputPlaceholder}
         </label>
@@ -45,7 +45,7 @@ export function Composer({ t, value, onChange, onSend, disabled }: Props) {
             }
           }}
           placeholder={t.inputPlaceholder}
-          className="max-h-42 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] leading-6 text-ink placeholder:text-muted focus:outline-none"
+          className="max-h-36 min-h-8 flex-1 resize-none bg-transparent px-2.5 py-1 text-[15px] leading-6 text-ink placeholder:text-muted focus:outline-none"
         />
         <button
           type="button"
@@ -53,9 +53,9 @@ export function Composer({ t, value, onChange, onSend, disabled }: Props) {
           disabled={!canSend}
           aria-label={t.send}
           title={t.send}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-moss text-on-accent transition-opacity disabled:opacity-35"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-moss text-on-accent transition-opacity disabled:opacity-35"
         >
-          <ArrowUp className="h-5 w-5" />
+          <ArrowUp className="h-4 w-4" />
         </button>
       </div>
     </div>

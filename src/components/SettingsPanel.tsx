@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2 } from "lucide-react";
+import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound } from "lucide-react";
 import { cn } from "../lib/utils";
 import { LANGUAGES, MODEL } from "../lib/api";
 import type { LegalPage } from "../lib/legal";
@@ -24,6 +24,9 @@ interface Props {
   onSoundChange: (on: boolean) => void;
   onNewConversation: () => void;
   onDeleteAll: () => void;
+  accountName: string;
+  onSignOut: () => void;
+  onDeleteAccount: () => void;
   onOpenLegal: (page: LegalPage) => void;
 }
 
@@ -88,7 +91,27 @@ export function SettingsPanel(p: Props) {
 
   return (
     <div className="space-y-8">
-      <section aria-labelledby="mood-heading" className="space-y-3">
+      <section aria-labelledby="account-heading" className="space-y-3">
+        <h3 id="account-heading" className="font-display text-lg font-bold text-ink">
+          {t.accountSection}
+        </h3>
+        <p className="flex items-center gap-2 text-sm">
+          <UserRound className="h-4 w-4 text-moss" aria-hidden="true" />
+          {t.signedInAs.replace("{name}", p.accountName)}
+        </p>
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <button type="button" onClick={p.onSignOut} className="flex items-center gap-2 text-sm font-medium text-ink hover:underline">
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            {t.signOut}
+          </button>
+          <button type="button" onClick={p.onDeleteAccount} className="flex items-center gap-2 text-sm font-medium text-alert hover:underline">
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+            {t.deleteAccount}
+          </button>
+        </div>
+      </section>
+
+      <section aria-labelledby="mood-heading" className="space-y-3 border-t border-line pt-6">
         <div>
           <h3 id="mood-heading" className="font-display text-lg font-bold text-ink">
             {t.moodPrompt}
