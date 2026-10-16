@@ -6,7 +6,7 @@ export type LanguageCode = (typeof LANGUAGE_CODES)[number];
 export const MOOD_IDS = ["happy", "sad", "anxious", "tired", "stressed", "energetic"] as const;
 export type MoodId = (typeof MOOD_IDS)[number];
 
-export const MODES = ["friendly", "reflective"] as const;
+export const MODES = ["friendly", "psychologist"] as const;
 export type Mode = (typeof MODES)[number];
 
 /** Whether Dilo only listens or also offers suggestions. */

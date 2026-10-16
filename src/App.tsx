@@ -36,7 +36,7 @@ import { SupportToggle } from "./components/SupportToggle";
 type View = "chat" | "journal";
 
 const isLanguage = (v: unknown): v is LanguageCode => LANGUAGES.some((l) => l.code === v);
-const isMode = (v: unknown): v is Mode => v === "friendly" || v === "reflective";
+const isMode = (v: unknown): v is Mode => v === "friendly" || v === "psychologist";
 const isSupport = (v: unknown): v is SupportStyle => v === "listen" || v === "tips";
 const isTheme = (v: unknown): v is Theme => v === "light" || v === "dark" || v === "system";
 const isTextSize = (v: unknown): v is TextSize => v === "small" || v === "medium" || v === "large";
@@ -53,17 +53,17 @@ const viewFromHash = (): View => (window.location.hash === "#journal" ? "journal
 function ModeSwitch({ t, mode, onChange }: { t: Strings; mode: Mode; onChange: (m: Mode) => void }) {
   return (
     <div role="radiogroup" aria-label={t.modeLabel} className="flex rounded-full border border-line bg-surface p-0.5">
-      {(["friendly", "reflective"] as const).map((m) => (
+      {(["friendly", "psychologist"] as const).map((m) => (
         <button
           key={m}
           type="button"
           role="radio"
           aria-checked={mode === m}
-          title={m === "friendly" ? t.friendlyHint : t.reflectiveHint}
+          title={m === "friendly" ? t.friendlyHint : t.psychologistHint}
           onClick={() => onChange(m)}
           className={cn("rounded-full px-3 py-1 text-sm transition-colors", mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink")}
         >
-          {m === "friendly" ? t.friendly : t.reflective}
+          {m === "friendly" ? t.friendly : t.psychologist}
         </button>
       ))}
     </div>
