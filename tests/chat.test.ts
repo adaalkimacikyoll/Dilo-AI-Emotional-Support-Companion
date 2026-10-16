@@ -85,6 +85,8 @@ describe("getSystemInstruction", () => {
     const listen = getSystemInstruction("en", "friendly", null, "listen");
     expect(listen).toContain("Response type: Just listen");
     expect(listen).toContain("Do not give suggestions");
+    expect(listen).toContain("Always reply");
+    expect(listen).toContain("End every reply by inviting them to keep talking");
     expect(listen).not.toContain("Listen and suggest");
     expect(listen).toContain("[CRISIS]");
     const tips = getSystemInstruction("en", "psychologist", null, "tips");
