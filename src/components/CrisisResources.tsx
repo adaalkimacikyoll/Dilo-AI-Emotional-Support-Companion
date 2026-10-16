@@ -22,7 +22,7 @@ export function CrisisResources({ t, language, compact = false }: { t: Strings; 
               <a
                 href={`tel:${line.tel}`}
                 dir="ltr"
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-moss-soft px-3 py-1 font-semibold text-moss tabular-nums hover:bg-moss hover:text-paper"
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-moss-soft px-3 py-1 font-semibold text-moss tabular-nums hover:bg-moss hover:text-on-accent"
               >
                 <Phone className="h-3.5 w-3.5" aria-hidden="true" />
                 {line.phone}

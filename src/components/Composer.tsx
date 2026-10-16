@@ -79,7 +79,7 @@ export function Composer({ t, value, onChange, onSend, disabled, speechLocale }:
           disabled={!canSend}
           aria-label={t.send}
           title={t.send}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-moss text-paper transition-opacity disabled:opacity-35"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-moss text-on-accent transition-opacity disabled:opacity-35"
         >
           <ArrowUp className="h-5 w-5" />
         </button>

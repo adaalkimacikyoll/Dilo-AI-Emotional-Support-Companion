@@ -38,7 +38,7 @@ export function Dialog({ open, onClose, title, closeLabel, variant = "center", d
     >
       <div className="flex h-full max-h-[inherit] flex-col">
         <div className="flex items-center justify-between gap-4 border-b border-line px-5 py-4">
-          <h2 className="text-base font-semibold">{title}</h2>
+          <h2 className="font-display text-xl font-bold">{title}</h2>
           <button
             type="button"
             onClick={onClose}

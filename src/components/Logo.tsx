@@ -6,9 +6,9 @@ export function Logo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true" className={cn("shrink-0", className)}>
       {petals.map((angle) => (
-        <ellipse key={angle} cx="16" cy="6.5" rx="2.6" ry="5" fill="#e2ad32" transform={`rotate(${angle} 16 16)`} />
+        <ellipse key={angle} cx="16" cy="6.5" rx="2.6" ry="5" fill="#ffd700" transform={`rotate(${angle} 16 16)`} />
       ))}
-      <circle cx="16" cy="16" r="6.2" fill="#3c5a48" />
+      <circle cx="16" cy="16" r="6.2" fill="#b8a34d" />
     </svg>
   );
 }

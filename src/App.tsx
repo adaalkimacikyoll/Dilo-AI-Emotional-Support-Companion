@@ -147,7 +147,7 @@ export default function App() {
           <button type="button" onClick={startNewConversation} className="flex items-center gap-2.5" aria-label={t.newChat}>
             <Logo className="h-8 w-8" />
             <span className="text-start">
-              <span className="block font-serif text-xl font-semibold leading-none tracking-tight">Dilo</span>
+              <span className="block font-display text-xl font-bold leading-none">Dilo</span>
               <span className="hidden text-xs text-muted sm:block">{t.tagline}</span>
             </span>
           </button>
@@ -164,7 +164,7 @@ export default function App() {
                   onClick={() => setMode(m)}
                   className={cn(
                     "rounded-full px-3 py-1 text-sm transition-colors",
-                    mode === m ? "bg-moss text-paper" : "text-muted hover:text-ink",
+                    mode === m ? "bg-moss text-on-accent" : "text-muted hover:text-ink",
                   )}
                 >
                   {m === "friendly" ? t.friendly : t.reflective}
@@ -199,7 +199,7 @@ export default function App() {
         <div className="mx-auto max-w-3xl px-4 py-8">
           {isEmpty ? (
             <section className="pt-6 sm:pt-16">
-              <h1 className="max-w-xl font-serif text-4xl leading-[1.1] tracking-tight sm:text-5xl">{t.welcomeTitle}</h1>
+              <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.1] sm:text-5xl">{t.welcomeTitle}</h1>
               <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">{t.welcomeBody}</p>
 
               <div className="mt-10">
