@@ -47,6 +47,7 @@ export function Composer({ t, value, onChange, onSend, disabled, speechLocale }:
           id="composer"
           ref={textareaRef}
           rows={1}
+          maxLength={4000}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => {

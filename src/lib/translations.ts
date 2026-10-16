@@ -1,5 +1,6 @@
-export type LanguageCode = "en" | "tr" | "de" | "fr" | "es" | "ar" | "fa";
-export type MoodId = "happy" | "sad" | "anxious" | "tired" | "stressed" | "energetic";
+import type { ChatErrorKind, LanguageCode, MoodId } from "../../shared/chat-types";
+
+export type { LanguageCode, MoodId };
 type RecCategory = "activity" | "food" | "extra";
 
 export interface Strings {
@@ -49,7 +50,7 @@ export interface Strings {
   crisisFind: string;
   crisisInline: string;
   disclaimer: string;
-  errors: Record<"missing_key" | "invalid_key" | "quota" | "network" | "unknown", string>;
+  errors: Record<ChatErrorKind, string>;
   quickSuggestions: string[];
   moods: Record<MoodId, string>;
   recommendations: Record<MoodId, Record<RecCategory, string[]>>;
@@ -104,8 +105,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "You don't have to go through this alone. Trained people are available right now.",
     disclaimer: "Dilo is an AI and can make mistakes. It is not a substitute for professional care.",
     errors: {
-      missing_key: "Dilo isn't connected yet. Add GEMINI_API_KEY to .env.local and restart the app.",
-      invalid_key: "The Gemini API key was rejected. Check GEMINI_API_KEY in .env.local.",
+      missing_key: "Dilo isn't connected yet. Set GEMINI_API_KEY in the Vercel project settings (or .env.local when running locally).",
+      invalid_key: "The Gemini API key was rejected. Check GEMINI_API_KEY in the server settings.",
+      rate_limited: "You're sending messages very quickly. Wait a minute, then try again.",
+      bad_request: "This message couldn't be sent. Try a shorter message or start a new conversation.",
       quota: "The Gemini usage limit has been reached. Wait a moment, then try again.",
       network: "No connection to Gemini. Check your internet connection and try again.",
       unknown: "Dilo couldn't reply this time. Try sending your message again.",
@@ -200,8 +203,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "Bununla tek başına baş etmek zorunda değilsin. Şu anda seni dinleyebilecek eğitimli insanlar var.",
     disclaimer: "Dilo bir yapay zekadır ve hata yapabilir. Profesyonel desteğin yerini tutmaz.",
     errors: {
-      missing_key: "Dilo henüz bağlı değil. .env.local dosyasına GEMINI_API_KEY ekleyip uygulamayı yeniden başlat.",
-      invalid_key: "Gemini API anahtarı reddedildi. .env.local içindeki GEMINI_API_KEY değerini kontrol et.",
+      missing_key: "Dilo henüz bağlı değil. Vercel proje ayarlarına (yerelde .env.local dosyasına) GEMINI_API_KEY ekle.",
+      invalid_key: "Gemini API anahtarı reddedildi. Sunucu ayarlarındaki GEMINI_API_KEY değerini kontrol et.",
+      rate_limited: "Çok hızlı mesaj gönderiyorsun. Bir dakika bekleyip tekrar dene.",
+      bad_request: "Bu mesaj gönderilemedi. Daha kısa bir mesaj dene ya da yeni bir sohbet başlat.",
       quota: "Gemini kullanım sınırına ulaşıldı. Biraz bekleyip tekrar dene.",
       network: "Gemini'ye bağlanılamadı. İnternet bağlantını kontrol edip tekrar dene.",
       unknown: "Dilo bu sefer cevap veremedi. Mesajını tekrar göndermeyi dene.",
@@ -296,8 +301,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "Du musst das nicht allein durchstehen. Geschulte Menschen sind jetzt für dich erreichbar.",
     disclaimer: "Dilo ist eine KI und kann Fehler machen. Dilo ersetzt keine professionelle Hilfe.",
     errors: {
-      missing_key: "Dilo ist noch nicht verbunden. Trage GEMINI_API_KEY in .env.local ein und starte die App neu.",
-      invalid_key: "Der Gemini-API-Schlüssel wurde abgelehnt. Prüfe GEMINI_API_KEY in .env.local.",
+      missing_key: "Dilo ist noch nicht verbunden. Setze GEMINI_API_KEY in den Vercel-Projekteinstellungen (lokal in .env.local).",
+      invalid_key: "Der Gemini-API-Schlüssel wurde abgelehnt. Prüfe GEMINI_API_KEY in den Server-Einstellungen.",
+      rate_limited: "Du sendest sehr schnell Nachrichten. Warte eine Minute und versuche es erneut.",
+      bad_request: "Diese Nachricht konnte nicht gesendet werden. Versuche eine kürzere Nachricht oder beginne ein neues Gespräch.",
       quota: "Das Gemini-Nutzungslimit ist erreicht. Warte kurz und versuche es erneut.",
       network: "Keine Verbindung zu Gemini. Prüfe deine Internetverbindung und versuche es erneut.",
       unknown: "Dilo konnte diesmal nicht antworten. Sende deine Nachricht erneut.",
@@ -392,8 +399,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "Vous n'avez pas à traverser cela seul. Des personnes formées sont disponibles dès maintenant.",
     disclaimer: "Dilo est une IA et peut se tromper. Dilo ne remplace pas un accompagnement professionnel.",
     errors: {
-      missing_key: "Dilo n'est pas encore connecté. Ajoutez GEMINI_API_KEY dans .env.local puis redémarrez l'application.",
-      invalid_key: "La clé API Gemini a été refusée. Vérifiez GEMINI_API_KEY dans .env.local.",
+      missing_key: "Dilo n'est pas encore connecté. Définissez GEMINI_API_KEY dans les paramètres du projet Vercel (ou .env.local en local).",
+      invalid_key: "La clé API Gemini a été refusée. Vérifiez GEMINI_API_KEY dans les paramètres du serveur.",
+      rate_limited: "Vous envoyez des messages très rapidement. Patientez une minute puis réessayez.",
+      bad_request: "Ce message n'a pas pu être envoyé. Essayez un message plus court ou commencez une nouvelle conversation.",
       quota: "La limite d'utilisation de Gemini est atteinte. Patientez un instant puis réessayez.",
       network: "Pas de connexion à Gemini. Vérifiez votre connexion Internet et réessayez.",
       unknown: "Dilo n'a pas pu répondre cette fois. Renvoyez votre message.",
@@ -488,8 +497,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "No tienes que pasar por esto solo. Hay personas formadas disponibles ahora mismo.",
     disclaimer: "Dilo es una IA y puede equivocarse. No sustituye la atención profesional.",
     errors: {
-      missing_key: "Dilo aún no está conectado. Añade GEMINI_API_KEY en .env.local y reinicia la aplicación.",
-      invalid_key: "La clave de la API de Gemini fue rechazada. Revisa GEMINI_API_KEY en .env.local.",
+      missing_key: "Dilo aún no está conectado. Define GEMINI_API_KEY en los ajustes del proyecto de Vercel (o en .env.local en local).",
+      invalid_key: "La clave de la API de Gemini fue rechazada. Revisa GEMINI_API_KEY en los ajustes del servidor.",
+      rate_limited: "Estás enviando mensajes muy rápido. Espera un minuto y vuelve a intentarlo.",
+      bad_request: "No se pudo enviar este mensaje. Prueba con un mensaje más corto o empieza una nueva conversación.",
       quota: "Se alcanzó el límite de uso de Gemini. Espera un momento y vuelve a intentarlo.",
       network: "No hay conexión con Gemini. Revisa tu conexión a Internet y vuelve a intentarlo.",
       unknown: "Dilo no pudo responder esta vez. Vuelve a enviar tu mensaje.",
@@ -584,8 +595,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "لست مضطرًا لمواجهة هذا وحدك. هناك أشخاص مدرَّبون متاحون الآن.",
     disclaimer: "ديلو ذكاء اصطناعي وقد يخطئ. لا يُغني عن الرعاية المتخصصة.",
     errors: {
-      missing_key: "ديلو غير متصل بعد. أضف GEMINI_API_KEY إلى ملف ‎.env.local ثم أعد تشغيل التطبيق.",
-      invalid_key: "تم رفض مفتاح Gemini API. تحقّق من GEMINI_API_KEY في ملف ‎.env.local.",
+      missing_key: "ديلو غير متصل بعد. أضف GEMINI_API_KEY في إعدادات مشروع Vercel (أو في ‎.env.local محليًا).",
+      invalid_key: "تم رفض مفتاح Gemini API. تحقّق من GEMINI_API_KEY في إعدادات الخادم.",
+      rate_limited: "أنت ترسل الرسائل بسرعة كبيرة. انتظر دقيقة ثم حاول مرة أخرى.",
+      bad_request: "تعذّر إرسال هذه الرسالة. جرّب رسالة أقصر أو ابدأ محادثة جديدة.",
       quota: "تم بلوغ حد استخدام Gemini. انتظر قليلًا ثم حاول مرة أخرى.",
       network: "لا يوجد اتصال بـ Gemini. تحقّق من اتصالك بالإنترنت وحاول مرة أخرى.",
       unknown: "لم يتمكن ديلو من الرد هذه المرة. أعد إرسال رسالتك.",
@@ -680,8 +693,10 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     crisisInline: "لازم نیست این را تنها پشت سر بگذاری. همین حالا افراد آموزش‌دیده در دسترس هستند.",
     disclaimer: "دیلو یک هوش مصنوعی است و ممکن است اشتباه کند. جایگزین کمک تخصصی نیست.",
     errors: {
-      missing_key: "دیلو هنوز متصل نیست. GEMINI_API_KEY را به فایل ‎.env.local اضافه کن و برنامه را دوباره اجرا کن.",
-      invalid_key: "کلید Gemini API پذیرفته نشد. مقدار GEMINI_API_KEY را در ‎.env.local بررسی کن.",
+      missing_key: "دیلو هنوز متصل نیست. GEMINI_API_KEY را در تنظیمات پروژه Vercel (یا ‎.env.local در اجرای محلی) قرار بده.",
+      invalid_key: "کلید Gemini API پذیرفته نشد. GEMINI_API_KEY را در تنظیمات سرور بررسی کن.",
+      rate_limited: "خیلی سریع پیام می‌فرستی. یک دقیقه صبر کن و دوباره امتحان کن.",
+      bad_request: "این پیام ارسال نشد. پیام کوتاه‌تری امتحان کن یا گفتگوی جدیدی شروع کن.",
       quota: "سقف استفاده از Gemini پر شده است. کمی صبر کن و دوباره امتحان کن.",
       network: "اتصال به Gemini برقرار نشد. اینترنتت را بررسی کن و دوباره امتحان کن.",
       unknown: "دیلو این بار نتوانست پاسخ دهد. پیامت را دوباره بفرست.",
