@@ -124,6 +124,9 @@ export interface Strings {
   deleteAllData: string;
   deleteAllConfirm: string;
   genericError: string;
+  modelDownloadingMb: string;
+  modelLoadingCache: string;
+  modelFirstTimeOnly: string;
   errors: Record<ChatErrorKind, string>;
   quickSuggestions: string[];
   moods: Record<MoodId, string>;
@@ -252,6 +255,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "Delete all my data and withdraw consent",
     deleteAllConfirm: "This deletes all conversations, journal entries, notes, settings and the downloaded AI model from this device and withdraws your consent. This can't be undone.",
     genericError: "Something went wrong. Try again.",
+    modelDownloadingMb: "Downloading the AI model: {mb} MB of about {total} MB",
+    modelLoadingCache: "Starting the AI from this device… {pct}%",
+    modelFirstTimeOnly: "This only happens the first time. After that, Dilo starts in seconds.",
     errors: {
       unsupported: "This device can't run the on-device AI.",
       not_ready: "The AI model isn't ready yet. Download it first.",
@@ -422,6 +428,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "Tüm verilerimi sil ve onayımı geri al",
     deleteAllConfirm: "Bu işlem tüm sohbetleri, günlük yazılarını, notları, ayarları ve indirilen yapay zeka modelini bu cihazdan siler ve onayını geri alır. Geri alınamaz.",
     genericError: "Bir şeyler ters gitti. Tekrar dene.",
+    modelDownloadingMb: "Yapay zeka modeli indiriliyor: yaklaşık {total} MB'ın {mb} MB'ı",
+    modelLoadingCache: "Yapay zeka bu cihazdan başlatılıyor… %{pct}",
+    modelFirstTimeOnly: "Bu yalnızca ilk seferde olur. Sonrasında Dilo saniyeler içinde açılır.",
     errors: {
       unsupported: "Bu cihaz cihaz içi yapay zekayı çalıştıramıyor.",
       not_ready: "Yapay zeka modeli henüz hazır değil. Önce indir.",
@@ -592,6 +601,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "Alle meine Daten löschen und Einwilligung widerrufen",
     deleteAllConfirm: "Dadurch werden alle Gespräche, Tagebucheinträge, Notizen, Einstellungen und das heruntergeladene KI-Modell von diesem Gerät gelöscht und deine Einwilligung widerrufen. Das kann nicht rückgängig gemacht werden.",
     genericError: "Etwas ist schiefgelaufen. Versuche es erneut.",
+    modelDownloadingMb: "KI-Modell wird heruntergeladen: {mb} MB von etwa {total} MB",
+    modelLoadingCache: "KI wird von diesem Gerät gestartet… {pct} %",
+    modelFirstTimeOnly: "Das passiert nur beim ersten Mal. Danach startet Dilo in Sekunden.",
     errors: {
       unsupported: "Dieses Gerät kann die lokale KI nicht ausführen.",
       not_ready: "Das KI-Modell ist noch nicht bereit. Lade es zuerst herunter.",
@@ -762,6 +774,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "Supprimer toutes mes données et retirer mon consentement",
     deleteAllConfirm: "Cela supprime toutes les conversations, pages de journal, notes, paramètres et le modèle d'IA téléchargé de cet appareil, et retire votre consentement. Cette action est irréversible.",
     genericError: "Une erreur s'est produite. Réessayez.",
+    modelDownloadingMb: "Téléchargement du modèle d'IA : {mb} Mo sur environ {total} Mo",
+    modelLoadingCache: "Démarrage de l'IA depuis cet appareil… {pct} %",
+    modelFirstTimeOnly: "Cela n'arrive que la première fois. Ensuite, Dilo démarre en quelques secondes.",
     errors: {
       unsupported: "Cet appareil ne peut pas exécuter l'IA locale.",
       not_ready: "Le modèle d'IA n'est pas encore prêt. Téléchargez-le d'abord.",
@@ -932,6 +947,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "Borrar todos mis datos y retirar el consentimiento",
     deleteAllConfirm: "Esto borra todas las conversaciones, entradas del diario, notas, ajustes y el modelo de IA descargado de este dispositivo, y retira tu consentimiento. No se puede deshacer.",
     genericError: "Algo salió mal. Inténtalo de nuevo.",
+    modelDownloadingMb: "Descargando el modelo de IA: {mb} MB de unos {total} MB",
+    modelLoadingCache: "Iniciando la IA desde este dispositivo… {pct} %",
+    modelFirstTimeOnly: "Esto solo ocurre la primera vez. Después, Dilo se inicia en segundos.",
     errors: {
       unsupported: "Este dispositivo no puede ejecutar la IA local.",
       not_ready: "El modelo de IA aún no está listo. Descárgalo primero.",
@@ -1102,6 +1120,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "احذف جميع بياناتي واسحب موافقتي",
     deleteAllConfirm: "سيؤدي هذا إلى حذف جميع المحادثات وصفحات اليوميات والملاحظات والإعدادات ونموذج الذكاء الاصطناعي المنزّل من هذا الجهاز وسحب موافقتك. لا يمكن التراجع عن ذلك.",
     genericError: "حدث خطأ ما. حاول مرة أخرى.",
+    modelDownloadingMb: "جارٍ تنزيل نموذج الذكاء الاصطناعي: {mb} ميغابايت من نحو {total} ميغابايت",
+    modelLoadingCache: "جارٍ تشغيل الذكاء الاصطناعي من هذا الجهاز… {pct}٪",
+    modelFirstTimeOnly: "يحدث هذا في المرة الأولى فقط. بعدها يبدأ ديلو خلال ثوانٍ.",
     errors: {
       unsupported: "لا يستطيع هذا الجهاز تشغيل الذكاء الاصطناعي المحلي.",
       not_ready: "نموذج الذكاء الاصطناعي غير جاهز بعد. نزّله أولًا.",
@@ -1272,6 +1293,9 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     deleteAllData: "همه داده‌هایم را حذف کن و رضایتم را پس بگیر",
     deleteAllConfirm: "این کار همه گفتگوها، نوشته‌های روزانه، یادداشت‌ها، تنظیمات و مدل هوش مصنوعی دانلودشده را از این دستگاه حذف می‌کند و رضایتت را پس می‌گیرد. قابل بازگشت نیست.",
     genericError: "مشکلی پیش آمد. دوباره امتحان کن.",
+    modelDownloadingMb: "در حال دانلود مدل هوش مصنوعی: {mb} مگابایت از حدود {total} مگابایت",
+    modelLoadingCache: "در حال راه‌اندازی هوش مصنوعی از این دستگاه… {pct}٪",
+    modelFirstTimeOnly: "این فقط بار اول اتفاق می‌افتد. پس از آن دیلو در چند ثانیه باز می‌شود.",
     errors: {
       unsupported: "این دستگاه نمی‌تواند هوش مصنوعی محلی را اجرا کند.",
       not_ready: "مدل هوش مصنوعی هنوز آماده نیست. ابتدا آن را دانلود کن.",

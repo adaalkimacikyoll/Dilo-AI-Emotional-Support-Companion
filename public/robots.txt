@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://dilo-ai-emotional-support-companion.vercel.app/sitemap.xml

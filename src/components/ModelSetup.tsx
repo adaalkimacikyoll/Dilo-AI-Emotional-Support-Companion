@@ -1,5 +1,5 @@
 import { Download, MonitorX, ShieldCheck } from "lucide-react";
-import { MODEL } from "../lib/api";
+import { MODEL, type LoadProgress } from "../lib/api";
 import type { ChatErrorKind } from "../lib/chat-types";
 import type { Strings } from "../lib/translations";
 
@@ -7,7 +7,7 @@ export type ModelStatus =
   | { state: "checking" }
   | { state: "unsupported" }
   | { state: "not_downloaded" }
-  | { state: "loading"; progress: number }
+  | ({ state: "loading" } & LoadProgress)
   | { state: "ready" }
   | { state: "error"; kind: ChatErrorKind };
 
@@ -24,7 +24,15 @@ export function ModelSetup({ t, status, onDownload }: { t: Strings; status: Mode
     );
   }
 
-  const pct = status.state === "loading" ? Math.round(status.progress * 100) : 0;
+  const pct = status.state === "loading" ? Math.floor(status.progress * 100) : 0;
+  const loading = status.state === "loading" ? status : null;
+  const statusText = !loading
+    ? ""
+    : loading.stage === "load"
+      ? t.modelLoadingCache.replace("{pct}", String(pct))
+      : loading.mb
+        ? t.modelDownloadingMb.replace("{mb}", String(loading.mb)).replace("{total}", String(MODEL.downloadMB))
+        : t.modelPreparing.replace("{pct}", String(pct));
 
   return (
     <section aria-labelledby="model-title" className="space-y-3 rounded-xl border border-line bg-surface p-5">
@@ -35,12 +43,17 @@ export function ModelSetup({ t, status, onDownload }: { t: Strings; status: Mode
       <p className="text-sm leading-relaxed">{t.modelBody.replace("{model}", MODEL.name)}</p>
       <p className="text-sm leading-relaxed text-muted">{t.modelThirdParty}</p>
 
-      {status.state === "loading" ? (
+      {loading ? (
         <div role="status" aria-live="polite" className="space-y-2">
-          <p className="text-sm font-medium">{t.modelPreparing.replace("{pct}", String(pct))}</p>
-          <div className="h-2 overflow-hidden rounded-full bg-moss-soft" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
-            <div className="h-full rounded-full bg-moss transition-[width]" style={{ width: `${pct}%` }} />
+          <p className="text-sm font-medium tabular-nums">{statusText}</p>
+          <div className="relative h-2 overflow-hidden rounded-full bg-moss-soft" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>
+            {pct > 0 ? (
+              <div className="h-full rounded-full bg-moss transition-[width]" style={{ width: `${pct}%` }} />
+            ) : (
+              <div className="progress-indeterminate absolute inset-y-0 w-1/3 rounded-full bg-moss" />
+            )}
           </div>
+          {loading.stage === "download" && <p className="text-xs text-muted">{t.modelFirstTimeOnly}</p>}
         </div>
       ) : (
         <div className="flex flex-wrap items-center gap-3">

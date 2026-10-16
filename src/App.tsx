@@ -194,8 +194,8 @@ function DiloApp({ language, setLanguage, theme, setTheme, onOpenLegal }: DiloAp
   };
 
   const startModel = useCallback(() => {
-    setModelStatus({ state: "loading", progress: 0 });
-    loadModel((progress) => setModelStatus({ state: "loading", progress }))
+    setModelStatus({ state: "loading", progress: 0, stage: "download", mb: null });
+    loadModel((p) => setModelStatus({ state: "loading", ...p }))
       .then(() => setModelStatus({ state: "ready" }))
       .catch((e) => {
         const kind: ChatErrorKind = e instanceof ChatError ? e.kind : "download_failed";
