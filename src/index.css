@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=Newsreader:opsz,wght@6..72,400..600&family=Vazirmatn:wght@400..700&display=swap");
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Vazirmatn:wght@400..700&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -6,36 +6,47 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  /* Instrument Sans for the interface, Newsreader for Dilo's voice.
-     Vazirmatn covers Arabic and Persian glyphs in both. */
-  --font-sans: "Instrument Sans", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Newsreader", "Vazirmatn", ui-serif, Georgia, serif;
+  /* Original Dilo typography: Libre Baskerville for text, Playfair Display for headings.
+     Vazirmatn covers Arabic and Persian glyphs. */
+  --font-sans: "Libre Baskerville", "Vazirmatn", Georgia, serif;
+  --font-serif: "Libre Baskerville", "Vazirmatn", Georgia, serif;
+  --font-display: "Playfair Display", "Vazirmatn", Georgia, serif;
+  --font-ui: "Inter", "Vazirmatn", ui-sans-serif, system-ui, sans-serif;
 
-  /* Light palette */
-  --color-paper: #f6f6f1;
+  /* Original Dilo palette: butter yellow with olive-butter accent */
+  --color-butter-50: #fffdf0;
+  --color-butter-100: #fffbc2;
+  --color-butter-200: #fff785;
+  --color-butter-300: #ffef47;
+  --color-butter-500: #ffd700;
+  --color-olive-butter: #b8a34d;
+
+  --color-paper: #fffdf0;
   --color-surface: #ffffff;
-  --color-ink: #1d2420;
-  --color-muted: #5f6a63;
-  --color-line: #dfe3db;
-  --color-moss: #3c5a48;
-  --color-moss-soft: #e6ece5;
-  --color-sun: #e2ad32;
-  --color-alert: #a3402e;
-  --color-alert-soft: #f8ebe7;
+  --color-ink: #292524;
+  --color-muted: #78716c;
+  --color-line: #fff3a8;
+  --color-moss: #b8a34d;
+  --color-moss-soft: #fffbc2;
+  --color-on-accent: #ffffff;
+  --color-sun: #ffd700;
+  --color-alert: #dc2626;
+  --color-alert-soft: #fef2f2;
 }
 
 @layer base {
   .dark {
-    --color-paper: #131714;
-    --color-surface: #1b201c;
-    --color-ink: #e6eae4;
-    --color-muted: #9aa59d;
-    --color-line: #2c332e;
-    --color-moss: #9cc3a9;
-    --color-moss-soft: #223027;
-    --color-sun: #e8bc4f;
-    --color-alert: #ec9a87;
-    --color-alert-soft: #35211c;
+    --color-paper: #0c0a09;
+    --color-surface: #1c1917;
+    --color-ink: #f5f5f4;
+    --color-muted: #a8a29e;
+    --color-line: #292524;
+    --color-moss: #b8a34d;
+    --color-moss-soft: #292524;
+    --color-on-accent: #ffffff;
+    --color-sun: #ffd700;
+    --color-alert: #f87171;
+    --color-alert-soft: #2a1414;
   }
 
   html {

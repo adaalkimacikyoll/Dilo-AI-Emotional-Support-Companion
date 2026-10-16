@@ -46,7 +46,7 @@ function Segmented<T extends string>({
             onClick={() => onChange(o.value)}
             className={cn(
               "flex-1 rounded-md px-2 py-1.5 text-sm transition-colors",
-              value === o.value ? "bg-moss text-paper" : "text-muted hover:text-ink",
+              value === o.value ? "bg-moss text-on-accent" : "text-muted hover:text-ink",
             )}
           >
             {o.label}
@@ -86,7 +86,7 @@ export function SettingsPanel(p: Props) {
     <div className="space-y-8">
       <section aria-labelledby="mood-heading" className="space-y-3">
         <div>
-          <h3 id="mood-heading" className="font-semibold text-ink">
+          <h3 id="mood-heading" className="font-display text-lg font-bold text-ink">
             {t.moodPrompt}
           </h3>
           <p className="text-sm text-muted">{t.moodHint}</p>
@@ -95,7 +95,7 @@ export function SettingsPanel(p: Props) {
 
         {recs && p.mood && (
           <div className="space-y-4 rounded-xl border border-line bg-surface p-4">
-            <p className="font-serif text-lg leading-snug text-ink">
+            <p className="font-display text-lg font-bold leading-snug text-ink">
               {t.recsTitle.replace("{mood}", t.moods[p.mood].toLocaleLowerCase(locale))}
             </p>
             <RecList icon={<Footprints className="h-4 w-4" />} title={t.activity} items={recs.activity} />
@@ -106,7 +106,7 @@ export function SettingsPanel(p: Props) {
       </section>
 
       <section aria-labelledby="prefs-heading" className="space-y-5 border-t border-line pt-6">
-        <h3 id="prefs-heading" className="font-semibold text-ink">
+        <h3 id="prefs-heading" className="font-display text-lg font-bold text-ink">
           {t.preferences}
         </h3>
 

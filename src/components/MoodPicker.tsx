@@ -25,7 +25,7 @@ export function MoodPicker({ t, value, onChange, layout = "grid" }: Props) {
               "flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors",
               layout === "grid" && "justify-center",
               selected
-                ? "border-moss bg-moss text-paper"
+                ? "border-moss bg-moss text-on-accent"
                 : "border-line bg-surface text-ink hover:border-moss/50 hover:bg-moss-soft",
             )}
           >
