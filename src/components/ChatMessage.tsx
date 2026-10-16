@@ -57,7 +57,7 @@ export function ChatMessage({
       <Logo className="mt-1 h-7 w-7" />
       <div className="min-w-0 flex-1 space-y-2">
         <span className="sr-only">Dilo</span>
-        <div className={cn("dilo-prose w-fit max-w-full sm:max-w-[85%] rounded-2xl rounded-ss-none border border-line bg-surface px-4 py-3 shadow-sm", SIZE[textSize])}>
+        <div className={cn("dilo-prose w-fit max-w-full sm:max-w-[min(85%,52rem)] rounded-2xl rounded-ss-none border border-line bg-surface px-4 py-3 shadow-sm", SIZE[textSize])}>
           <Markdown>{message.text}</Markdown>
         </div>
         {message.crisis && <CrisisCard t={t} language={language} />}

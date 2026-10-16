@@ -54,7 +54,7 @@ export function EntriesTab({ t, language, entries, setEntries }: Props) {
       {sorted.length === 0 ? (
         <p className="py-10 text-center text-muted">{t.entriesEmpty}</p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {sorted.map((e) => {
             const mood = MOODS.find((m) => m.id === e.mood);
             return (
