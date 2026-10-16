@@ -1,4 +1,5 @@
 import type { MoodId } from "./translations";
+import type { Mode } from "./chat-types";
 import { isMoodId } from "./moods";
 import { decryptJSON, encryptJSON, isLockedPayload, type LockedPayload } from "./lock";
 
@@ -8,6 +9,8 @@ export interface StoredMessage {
   text: string;
   timestamp: number;
   crisis?: boolean;
+  /** Conversation style that produced a Dilo reply. */
+  mode?: Mode;
 }
 
 export interface Conversation {

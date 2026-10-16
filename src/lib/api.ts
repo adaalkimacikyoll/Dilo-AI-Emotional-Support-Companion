@@ -1,13 +1,5 @@
-import {
-  CreateWebWorkerMLCEngine,
-  deleteModelAllInfoInCache,
-  hasModelInCache,
-  type AppConfig,
-  type ChatCompletionMessageParam,
-  type WebWorkerMLCEngine,
-} from "@mlc-ai/web-llm";
 import { LIMITS, type ChatErrorKind, type ChatRequest, type ChatTurn, type LanguageCode } from "./chat-types";
-import { extractCrisis, getSystemInstruction } from "./prompt";
+import { cleanReply, extractCrisis } from "./prompt";
 
 export type { ChatErrorKind, Mode, SupportStyle } from "./chat-types";
 
@@ -29,124 +21,10 @@ export const LANGUAGES: { code: LanguageCode; name: string; rtl: boolean }[] = [
 
 export const getLanguage = (code: string) => LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 
-// ---------- on-device model ----------
+/** Shown in settings and the legal pages. */
+export const AI_PROVIDER = { name: "Scaleway Generative APIs", location: "Paris (EU)" };
 
-/**
- * Qwen3 1.7B (Apache 2.0), quantised for the browser. Weights are downloaded once from Hugging Face
- * after the user agrees, then cached on the device. The model library is served from our own site.
- * Conversations are processed entirely on the device and never sent anywhere.
- */
-export const MODEL = {
-  id: "Qwen3-1.7B-q4f16_1-MLC",
-  name: "Qwen3 1.7B",
-  license: "Apache 2.0",
-  downloadMB: 970,
-  weightsUrl: "https://huggingface.co/mlc-ai/Qwen3-1.7B-q4f16_1-MLC",
-  libPath: "/models/Qwen3-1.7B-q4f16_1_cs1k-webgpu.wasm",
-};
-
-const appConfig = (): AppConfig => ({
-  model_list: [
-    {
-      model: MODEL.weightsUrl,
-      model_id: MODEL.id,
-      model_lib: new URL(MODEL.libPath, window.location.origin).href,
-      vram_required_MB: 2036.66,
-      low_resource_required: true,
-      overrides: { context_window_size: 4096 },
-    },
-  ],
-});
-
-/**
- * Development-only stand-in for the model (open the app with ?mockAI), so the interface can be
- * tested in browsers without WebGPU. `import.meta.env.DEV` is false in production builds, so this
- * code is removed from the published site.
- */
-const useMock = () => import.meta.env.DEV && new URLSearchParams(window.location.search).has("mockAI");
-const MOCK_CACHE_KEY = "dilo.dev.mockModelCached";
-
-export async function isWebGPUAvailable(): Promise<boolean> {
-  if (useMock()) return true;
-  try {
-    const gpu = (navigator as Navigator & { gpu?: { requestAdapter: () => Promise<unknown> } }).gpu;
-    return !!gpu && !!(await gpu.requestAdapter());
-  } catch {
-    return false;
-  }
-}
-
-export async function isModelDownloaded(): Promise<boolean> {
-  if (useMock()) return localStorage.getItem(MOCK_CACHE_KEY) === "1";
-  try {
-    return await hasModelInCache(MODEL.id, appConfig());
-  } catch {
-    return false;
-  }
-}
-
-let enginePromise: Promise<WebWorkerMLCEngine> | null = null;
-
-export interface LoadProgress {
-  /** 0..1. WebLLM only updates this after each weight file, so it can stay at 0 for a while. */
-  progress: number;
-  stage: "download" | "load";
-  /** Megabytes fetched or loaded so far, parsed from WebLLM's status text. */
-  mb: number | null;
-}
-
-/** Turns WebLLM's progress report into something the UI can show honestly. */
-export function parseProgress(report: { progress: number; text: string }): LoadProgress {
-  const mb = /(\d+)MB (fetched|loaded)/.exec(report.text);
-  const stage = /Loading model from cache/.test(report.text) ? "load" : "download";
-  return { progress: report.progress, stage, mb: mb ? Number(mb[1]) : null };
-}
-
-/** Downloads (first time) or loads (from the device cache) the model. */
-export function loadModel(onProgress: (progress: LoadProgress) => void): Promise<WebWorkerMLCEngine> {
-  if (useMock()) {
-    enginePromise ??= (async () => {
-      for (let p = 0; p <= 1; p += 0.25) {
-        onProgress({ progress: p, stage: "download", mb: Math.round(p * MODEL.downloadMB) });
-        await new Promise((r) => setTimeout(r, 150));
-      }
-      localStorage.setItem(MOCK_CACHE_KEY, "1");
-      return {} as WebWorkerMLCEngine;
-    })();
-    return enginePromise;
-  }
-  enginePromise ??= CreateWebWorkerMLCEngine(new Worker(new URL("./llm.worker.ts", import.meta.url), { type: "module" }), MODEL.id, {
-    appConfig: appConfig(),
-    initProgressCallback: (report) => onProgress(parseProgress(report)),
-  }).catch((error) => {
-    enginePromise = null;
-    throw new ChatError(classifyError(error, "download_failed"));
-  });
-  return enginePromise;
-}
-
-/** Removes the downloaded model from this device (used when the user deletes their data). */
-export async function deleteModel() {
-  try {
-    const engine = enginePromise ? await enginePromise.catch(() => null) : null;
-    await engine?.unload();
-  } catch {
-    /* ignore */
-  }
-  enginePromise = null;
-  await deleteModelAllInfoInCache(MODEL.id, appConfig()).catch(() => undefined);
-}
-
-function classifyError(error: unknown, fallback: ChatErrorKind): ChatErrorKind {
-  const message = String((error as { message?: string })?.message ?? error).toLowerCase();
-  if (message.includes("webgpu") && (message.includes("not supported") || message.includes("unavailable"))) return "unsupported";
-  if (message.includes("out of memory") || message.includes("device lost") || message.includes("oom")) return "out_of_memory";
-  return fallback;
-}
-
-// ---------- chat ----------
-
-/** Keeps the most recent turns that fit the model's context window, starting with a user turn. */
+/** Keeps the most recent turns that fit the server's limits, starting with a user turn. */
 export function trimHistory(history: ChatTurn[]): ChatTurn[] {
   const kept: ChatTurn[] = [];
   let total = 0;
@@ -160,48 +38,8 @@ export function trimHistory(history: ChatTurn[]): ChatTurn[] {
   return kept;
 }
 
-/** Removes any reasoning block the model may emit, including a partial one while streaming. */
-export function cleanReply(raw: string): string {
-  return raw
-    .replace(/<think>[\s\S]*?<\/think>/g, "")
-    .replace(/<think>[\s\S]*$/, "")
-    .trimStart();
-}
-
-export function buildMessages(request: ChatRequest): ChatCompletionMessageParam[] {
-  return [
-    { role: "system", content: getSystemInstruction(request.language, request.mode, request.mood, request.support) },
-    ...trimHistory(request.history).map(
-      (t): ChatCompletionMessageParam => (t.role === "model" ? { role: "assistant", content: t.text } : { role: "user", content: t.text }),
-    ),
-  ];
-}
-
-/** Generates Dilo's reply on the device, streaming partial text through onText. */
-export async function chatWithDilo(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean }> {
-  if (!enginePromise) throw new ChatError("not_ready");
-  if (useMock()) return mockReply(request, onText);
-  const engine = await enginePromise;
-  let raw = "";
-  try {
-    const stream = await engine.chat.completions.create({
-      messages: buildMessages(request),
-      stream: true,
-      temperature: request.mode === "psychologist" ? 0.5 : 0.7,
-      max_tokens: LIMITS.maxReplyTokens,
-      extra_body: { enable_thinking: false },
-    });
-    for await (const chunk of stream) {
-      raw += chunk.choices[0]?.delta?.content ?? "";
-      onText(extractCrisis(cleanReply(raw)).text);
-    }
-  } catch (error) {
-    throw new ChatError(classifyError(error, "generation_failed"));
-  }
-  const { text, crisis } = extractCrisis(cleanReply(raw));
-  if (!text) throw new ChatError("generation_failed");
-  return { text, crisis };
-}
+/** Development-only stand-in for the server (open the app with ?mockAI). Removed from production builds. */
+const useMock = () => import.meta.env.DEV && new URLSearchParams(window.location.search).has("mockAI");
 
 async function mockReply(request: ChatRequest, onText: (text: string) => void) {
   const last = request.history[request.history.length - 1]?.text ?? "";
@@ -213,7 +51,52 @@ async function mockReply(request: ChatRequest, onText: (text: string) => void) {
   for (const word of raw.split(" ")) {
     shown += (shown ? " " : "") + word;
     onText(extractCrisis(cleanReply(shown)).text);
-    await new Promise((r) => setTimeout(r, 20));
+    await new Promise((r) => setTimeout(r, 15));
   }
   return extractCrisis(cleanReply(raw));
+}
+
+/** Sends the conversation to Dilo's server and streams the reply through onText. */
+export async function chatWithDilo(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean }> {
+  if (useMock()) return mockReply(request, onText);
+
+  let response: Response;
+  try {
+    response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...request, history: trimHistory(request.history) }),
+    });
+  } catch {
+    throw new ChatError("network");
+  }
+
+  if (!response.ok || !response.body) {
+    let kind: ChatErrorKind = response.status === 429 ? "rate_limited" : "generation_failed";
+    try {
+      const data = (await response.json()) as { error?: ChatErrorKind };
+      if (data.error) kind = data.error;
+    } catch {
+      // Non-JSON error page.
+    }
+    throw new ChatError(kind);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let raw = "";
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      raw += decoder.decode(value, { stream: true });
+      onText(extractCrisis(cleanReply(raw)).text);
+    }
+  } catch {
+    throw new ChatError("network");
+  }
+
+  const result = extractCrisis(cleanReply(raw));
+  if (!result.text) throw new ChatError("generation_failed");
+  return result;
 }

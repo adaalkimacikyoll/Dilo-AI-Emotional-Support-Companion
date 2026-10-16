@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound } from "lucide-react";
 import { cn } from "../lib/utils";
-import { LANGUAGES, MODEL } from "../lib/api";
+import { LANGUAGES } from "../lib/api";
 import type { LegalPage } from "../lib/legal";
 import { LegalLinks } from "./LegalDialog";
 import { MoodPicker } from "./MoodPicker";
@@ -199,7 +199,7 @@ export function SettingsPanel(p: Props) {
         </h3>
         <p className="flex items-start gap-2 text-sm text-muted">
           <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss" aria-hidden="true" />
-          {t.aiModelInfo.replace("{model}", MODEL.name).replace("{license}", MODEL.license)}
+          {t.aiModelInfo}
         </p>
         <LegalLinks t={t} onOpen={p.onOpenLegal} className="justify-start" />
         <button type="button" onClick={p.onDeleteAll} className="flex items-center gap-2 text-sm font-medium text-alert hover:underline">
