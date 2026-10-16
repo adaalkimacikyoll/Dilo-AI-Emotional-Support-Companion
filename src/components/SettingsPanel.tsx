@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Footprints, Coffee, Lightbulb, RotateCcw } from "lucide-react";
+import { Footprints, Coffee, Lightbulb, SquarePen } from "lucide-react";
 import { cn } from "../lib/utils";
 import { LANGUAGES } from "../lib/api";
 import { MoodPicker } from "./MoodPicker";
@@ -170,9 +170,9 @@ export function SettingsPanel(p: Props) {
         <button
           type="button"
           onClick={p.onNewConversation}
-          className="flex items-center gap-2 text-sm font-medium text-alert hover:underline"
+          className="flex items-center gap-2 text-sm font-medium text-ink hover:underline"
         >
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          <SquarePen className="h-4 w-4" aria-hidden="true" />
           {t.newChat}
         </button>
       </section>
