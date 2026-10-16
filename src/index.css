@@ -77,10 +77,10 @@
 /* Dilo's replies: serif, generous leading, restrained Markdown. */
 .dilo-prose {
   @apply font-serif text-ink;
-  line-height: 1.65;
+  line-height: 1.6;
 }
 .dilo-prose p {
-  margin: 0 0 0.85em;
+  margin: 0 0 0.7em;
 }
 .dilo-prose p:last-child,
 .dilo-prose ul:last-child,
