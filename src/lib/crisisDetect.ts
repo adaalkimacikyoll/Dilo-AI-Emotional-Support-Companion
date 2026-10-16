@@ -58,3 +58,36 @@ export function detectCrisis(text: string): boolean {
   const normalized = text.normalize("NFC");
   return PATTERNS.some((p) => p.test(normalized));
 }
+
+/**
+ * Clear first-person statements of intent to kill or seriously hurt another person.
+ * Any match closes the conversation for good, so these patterns only cover explicit wording
+ * ("I'm going to kill him"), not figures of speech ("my mum will kill me"). The model catches
+ * the rest with its own marker.
+ */
+const HARM_OTHERS_PATTERNS: RegExp[] = [
+  // English
+  /\b(i\s+want\s+to|i\s+wanna|i'?m\s+going\s+to|i\s+am\s+going\s+to|i'?m\s+gonna|i\s+will|i'?ll|i\s+plan\s+to|i'?m\s+planning\s+to)\s+(really\s+)?(kill|murder|stab|shoot|strangle|poison|hurt|harm|attack|beat\s+up)\s+(him|her|them|someone|somebody|people|everyone|everybody|my\s+\p{L}+|that\s+\p{L}+|this\s+\p{L}+)\b/iu,
+  // German
+  /\bich\s+(will|möchte|werde|werd)\s+(ihn|sie|jemanden|alle|meinen\s+\p{L}+|meine\s+\p{L}+|diesen\s+\p{L}+|diese\s+\p{L}+)\s+(umbringen|töten|ermorden|abstechen|erschießen|erstechen|verletzen)/iu,
+  // French
+  /\bje\s+(vais|veux)\s+(le|la|les|l')\s*(tuer|buter|poignarder|frapper)\b/iu,
+  /\bje\s+(vais|veux)\s+(tuer|buter|poignarder)\s+(quelqu'un|mon\s+\p{L}+|ma\s+\p{L}+|mes\s+\p{L}+|tout\s+le\s+monde)/iu,
+  /\bje\s+vais\s+(lui|leur)\s+faire\s+du\s+mal\b/iu,
+  // Spanish
+  /\b(voy\s+a|quiero)\s+(matarlo|matarla|matarlos|matarlas|matar\s+a\s+\p{L}+|apuñalarlo|apuñalarla|hacerle\s+daño|hacerles\s+daño)/iu,
+  // Arabic
+  /سأقتله|سأقتلها|سأقتلهم|أريد أن أقتله|أريد أن أقتلها|أريد قتله|أريد قتلها|سأؤذيه|سأؤذيها/,
+  // Persian
+  /می‌?کشمش|میکشمش|می‌?خواهم بکشمش|میخوام بکشمش|می‌?خواهم او را بکشم|بهش آسیب می‌?زنم/,
+];
+
+/** Turkish marks the object with a suffix, so these phrases only count when the user isn't talking about themselves. */
+const HARM_OTHERS_TURKISH = /öldüreceğim|öldürecem|öldürcem|öldürücem|öldürmek istiyorum|gebertece[ğk]im|gebertcem|gebertmek istiyorum|bıçaklayacağım|zarar vereceğim|zarar vermek istiyorum|canını yakacağım/i;
+const TURKISH_SELF = /kendimi|kendime|kendi canım/i;
+
+export function detectHarmToOthers(text: string): boolean {
+  const normalized = text.normalize("NFC");
+  if (HARM_OTHERS_PATTERNS.some((p) => p.test(normalized))) return true;
+  return HARM_OTHERS_TURKISH.test(normalized) && !TURKISH_SELF.test(normalized);
+}

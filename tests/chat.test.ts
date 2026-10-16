@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { trimHistory } from "../src/lib/api";
 import { LIMITS } from "../src/lib/chat-types";
-import { detectCrisis } from "../src/lib/crisisDetect";
+import { detectCrisis, detectHarmToOthers } from "../src/lib/crisisDetect";
 import { hasPlaceholders, LEGAL } from "../src/lib/legal";
 import { cleanReply, extractCrisis, getSystemInstruction } from "../src/lib/prompt";
 import { buildMessages, classifyStatus, DEFAULT_MODEL, handleRequest, parseChatRequest, resetRateLimits, sseToText } from "../server/chat";
@@ -88,6 +88,41 @@ describe("extractCrisis", () => {
     expect(result.crisis).toBe(crisis);
     expect(result.text).toBe("I'm really glad you told me.");
   });
+});
+
+describe("extractCrisis with the harm marker", () => {
+  it("detects and strips [HARM]", () => {
+    expect(extractCrisis("[HARM]\nI can't continue.")).toEqual({ text: "I can't continue.", crisis: false, harm: true });
+    expect(extractCrisis("**[HARM]** I can't continue.").harm).toBe(true);
+    expect(extractCrisis("All good.").harm).toBe(false);
+  });
+});
+
+describe("detectHarmToOthers (closes the conversation)", () => {
+  it.each([
+    "I'm going to kill him",
+    "i want to kill my boss",
+    "I will hurt her tonight",
+    "Onu öldüreceğim",
+    "babamı öldürmek istiyorum",
+    "ona zarar vermek istiyorum",
+    "Ich werde ihn umbringen",
+    "je vais le tuer",
+    "voy a matarlo",
+    "سأقتله",
+    "میخوام بکشمش",
+  ])("flags %j", (text) => expect(detectHarmToOthers(text)).toBe(true));
+
+  it.each([
+    "my mum is going to kill me when she sees this",
+    "I could kill for a coffee",
+    "I want to kill myself",
+    "kendimi öldürmek istiyorum",
+    "kendime zarar vermek istiyorum",
+    "annem beni öldürecek",
+    "I'm so angry at him",
+    "he hurt me badly",
+  ])("does not flag %j", (text) => expect(detectHarmToOthers(text)).toBe(false));
 });
 
 describe("cleanReply", () => {
@@ -205,6 +240,14 @@ describe("handleRequest", () => {
       body: typeof body === "string" ? body : JSON.stringify(body),
     });
   const env = { AI_API_KEY: "test-key" };
+
+  it("refuses a conversation that contains a stated intent to hurt someone", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    const body = { ...valid, history: [{ role: "user", text: "I'm going to kill him" }, { role: "model", text: "..." }, { role: "user", text: "hello again" }] };
+    const response = await handleRequest(post(body, "9.9.9.9"), env, fetchImpl);
+    expect(response.status).toBe(400);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 
   it("streams the reply from the provider and never caches it", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(sse(delta("That sounds "), delta("exhausting.")), { status: 200 }));

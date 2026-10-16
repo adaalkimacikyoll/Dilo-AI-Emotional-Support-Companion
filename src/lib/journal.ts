@@ -9,6 +9,8 @@ export interface StoredMessage {
   text: string;
   timestamp: number;
   crisis?: boolean;
+  /** Dilo's reply when the user stated an intent to hurt someone; shows emergency numbers. */
+  harm?: boolean;
   /** Conversation style that produced a Dilo reply. */
   mode?: Mode;
 }
@@ -21,6 +23,8 @@ export interface Conversation {
   messages: StoredMessage[];
   /** When set, title and messages are encrypted here and the plain fields are empty. */
   lock?: LockedPayload;
+  /** Time the conversation was closed for safety (intent to hurt someone). A closed conversation can never be continued. */
+  closed?: number;
 }
 
 /** Free writing. Never sent to the AI. */
@@ -61,7 +65,8 @@ export const isConversations = (v: unknown): v is Conversation[] =>
       isNum(c.updatedAt) &&
       Array.isArray(c.messages) &&
       c.messages.every(isMessage) &&
-      (c.lock === undefined || isLockedPayload(c.lock)),
+      (c.lock === undefined || isLockedPayload(c.lock)) &&
+      (c.closed === undefined || isNum(c.closed)),
   );
 
 export const isEntries = (v: unknown): v is JournalEntry[] =>
