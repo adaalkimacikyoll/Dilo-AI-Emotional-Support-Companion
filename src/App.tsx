@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LifeBuoy, SlidersHorizontal, RotateCw } from "lucide-react";
 import { cn } from "./lib/utils";
-import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode } from "./lib/gemini";
+import { ChatError, chatWithDilo, getLanguage, LANGUAGES, type ChatErrorKind, type Mode } from "./lib/api";
 import { TRANSLATIONS, type LanguageCode, type MoodId } from "./lib/translations";
 import { isMoodId } from "./lib/moods";
 import { playReplyChime } from "./lib/sound";
@@ -100,12 +100,12 @@ export default function App() {
       setIsLoading(true);
       setError(null);
       try {
-        const reply = await chatWithDilo(
-          history.map((m) => ({ role: m.role, text: m.text })),
+        const reply = await chatWithDilo({
+          history: history.map((m) => ({ role: m.role, text: m.text })),
           language,
           mode,
-          mood ? TRANSLATIONS.en.moods[mood].toLowerCase() : null,
-        );
+          mood,
+        });
         setMessages((prev) => [
           ...prev,
           { id: newId(), role: "model", text: reply.text, crisis: reply.crisis, timestamp: Date.now() },
@@ -243,7 +243,7 @@ export default function App() {
               {error && (
                 <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-alert/30 bg-alert-soft px-4 py-3 text-sm">
                   <span>{t.errors[error]}</span>
-                  {error !== "missing_key" && (
+                  {error !== "missing_key" && error !== "bad_request" && (
                     <button
                       type="button"
                       onClick={() => requestReply(messages)}

@@ -24,59 +24,67 @@ Dilo is an AI-powered emotional support chat app. It listens without judgement, 
 
 | Layer | Technology |
 |-------|-----------|
-| UI | React 19 + TypeScript |
+| UI | React 19 + TypeScript (strict) |
 | Build | Vite 6 |
 | Styling | Tailwind CSS 4 |
-| AI | Google Gemini API (`@google/genai`) |
-| Markdown | react-markdown |
+| API | Vercel Function (`api/chat.ts`), shared with the Vite dev server |
+| AI | Google Gemini API (`@google/genai`), called only on the server |
+| Tests | Vitest |
 
 ## How it works
 
 ```
-User input (text or voice)
-        ↓
-Conversation style + selected mood + language
-        ↓
-System prompt  →  Gemini API
-        ↓
-Crisis marker check  →  inline crisis resources when flagged
-        ↓
-Markdown reply, rendered left-to-right or right-to-left
+Browser (React)                         Server (Vercel Function / Vite dev middleware)
+───────────────                         ─────────────────────────────────────────────
+text or voice input
+mood, style, language     ── POST /api/chat ──▶  validate + rate limit
+recent history (trimmed)                         system prompt (style, mood, language, safety)
+                                                 Gemini API  (key stays here)
+reply + crisis flag       ◀──── JSON ─────────   crisis marker detection
+inline crisis lines if flagged
 ```
 
 ## Project structure
 
 ```
-src/
-  App.tsx                 app state, layout, chat flow
-  components/             ChatMessage, Composer, MoodPicker, SettingsPanel, CrisisResources, Dialog, Logo
-  hooks/                  usePersistentState, useSpeechInput
-  lib/gemini.ts           model call, system prompt, error handling
-  lib/translations.ts     all UI text and mood ideas, in 7 languages
-  lib/crisis.ts           verified crisis lines
+api/chat.ts               Vercel Function entry point
+server/chat.ts            request validation, rate limiting, Gemini call, error mapping
+server/prompt.ts          system prompt and crisis marker handling
+shared/chat-types.ts      types and limits used by both sides
+src/App.tsx               app state, layout, chat flow
+src/components/           ChatMessage, Composer, MoodPicker, SettingsPanel, CrisisResources, Dialog, Logo
+src/hooks/                usePersistentState, useSpeechInput
+src/lib/api.ts            client for /api/chat
+src/lib/translations.ts   all UI text and mood ideas, in 7 languages
+src/lib/crisis.ts         verified crisis lines
+tests/                    unit tests for the server logic
 ```
 
-## Quick start
+## Deploy on Vercel (free Hobby plan)
+
+1. Import this repository at [vercel.com/new](https://vercel.com/new). Vercel detects Vite automatically.
+2. In **Settings → Environment Variables**, add `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`).
+3. Deploy. Every pull request gets its own preview URL.
+
+The key is only read by the function in `api/chat.ts`; it is never sent to the browser.
+
+## Run locally
 
 ```bash
-git clone https://github.com/adaalkimacikyoll/Dilo-AI-Emotional-Support-Companion
-cd Dilo-AI-Emotional-Support-Companion
 npm install
-cp .env.example .env.local   # then add your key
+cp .env.example .env.local   # add GEMINI_API_KEY
 npm run dev                  # http://localhost:3000
 ```
 
-`.env.local`:
+On Windows PowerShell, if scripts are blocked, use `npm.cmd` instead of `npm`.
 
+## Quality checks
+
+```bash
+npm run lint    # TypeScript, strict mode
+npm test        # Vitest unit tests
+npm run build
 ```
-GEMINI_API_KEY=your_api_key_here
-# optional, defaults to gemini-3.8-flash
-GEMINI_MODEL=
-```
-
-Get a free Gemini API key at [aistudio.google.com](https://aistudio.google.com).
-
-> **Note:** in this client-only setup the key is bundled into the JavaScript sent to the browser. That is fine for local development, but before deploying publicly, move the Gemini call behind a server or serverless function so the key stays secret.
 
 ## The story behind it
 
@@ -88,7 +96,7 @@ Dilo's name comes from my cousin **Dilvin**, a psychology student who has always
 
 - [x] Crisis resource integration
 - [x] Mood-aware replies
-- [ ] Server-side API proxy for production deployment
+- [x] Server-side API proxy for production deployment
 - [ ] Conversation history across sessions and devices
 - [ ] Therapist-reviewed response guidelines
 - [ ] Mobile app (React Native)

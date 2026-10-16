@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Footprints, Coffee, Lightbulb, RotateCcw } from "lucide-react";
 import { cn } from "../lib/utils";
-import { LANGUAGES } from "../lib/gemini";
+import { LANGUAGES } from "../lib/api";
 import { MoodPicker } from "./MoodPicker";
 import type { LanguageCode, MoodId, Strings } from "../lib/translations";
 
@@ -110,9 +110,12 @@ export function SettingsPanel(p: Props) {
           {t.preferences}
         </h3>
 
-        <label className="block">
-          <span className="mb-2 block text-sm font-medium text-ink">{t.language}</span>
+        <div>
+          <label htmlFor="language-select" className="mb-2 block text-sm font-medium text-ink">
+            {t.language}
+          </label>
           <select
+            id="language-select"
             value={p.language}
             onChange={(e) => p.onLanguageChange(e.target.value as LanguageCode)}
             className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink"
@@ -123,7 +126,7 @@ export function SettingsPanel(p: Props) {
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
         <Segmented
           label={t.theme}
