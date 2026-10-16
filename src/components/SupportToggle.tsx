@@ -3,17 +3,16 @@ import { cn } from "../lib/utils";
 import type { SupportStyle } from "../lib/api";
 import type { Strings } from "../lib/translations";
 
+export const supportHint = (t: Strings, value: SupportStyle) => (value === "listen" ? t.listenHint : t.tipsHint);
+
 /** Lets the user choose, at any point in a conversation, whether Dilo only listens or also gives tips. */
 export function SupportToggle({ t, value, onChange }: { t: Strings; value: SupportStyle; onChange: (v: SupportStyle) => void }) {
   const options: { id: SupportStyle; label: string; hint: string; Icon: typeof Ear }[] = [
     { id: "listen", label: t.listenOnly, hint: t.listenHint, Icon: Ear },
     { id: "tips", label: t.giveTips, hint: t.tipsHint, Icon: Lightbulb },
   ];
-  const current = options.find((o) => o.id === value)!;
-
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      <div role="radiogroup" aria-label={t.supportLabel} className="flex rounded-full border border-line bg-surface p-0.5">
+      <div role="radiogroup" aria-label={t.supportLabel} className="flex w-full rounded-full border border-line bg-surface p-0.5 sm:w-auto">
         {options.map(({ id, label, hint, Icon }) => (
           <button
             key={id}
@@ -23,7 +22,7 @@ export function SupportToggle({ t, value, onChange }: { t: Strings; value: Suppo
             title={hint}
             onClick={() => onChange(id)}
             className={cn(
-              "flex items-center gap-1.5 rounded-full px-3 py-1 text-sm transition-colors",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-3 py-1 text-center text-sm leading-tight transition-colors sm:flex-none sm:whitespace-nowrap",
               value === id ? "bg-moss text-on-accent" : "text-muted hover:text-ink",
             )}
           >
@@ -32,9 +31,5 @@ export function SupportToggle({ t, value, onChange }: { t: Strings; value: Suppo
           </button>
         ))}
       </div>
-      <p className="text-xs text-muted" aria-live="polite">
-        {current.hint}
-      </p>
-    </div>
   );
 }
