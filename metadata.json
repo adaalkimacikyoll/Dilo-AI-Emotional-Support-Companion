@@ -1,7 +1,4 @@
 {
   "name": "Dilo",
-  "description": "An AI emotional support companion that listens without judgement, adapts to your mood and points you to real help when you need it.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
+  "description": "An AI emotional support companion that listens without judgement, adapts to your mood and points you to real help when you need it."
 }

@@ -40,7 +40,7 @@ export function PasswordDialog({ t, open, mode, dir, onClose, onSubmit }: Props)
     try {
       await onSubmit(password);
     } catch (err) {
-      setError(err instanceof WrongPasswordError ? t.wrongPassword : t.errors.unknown);
+      setError(err instanceof WrongPasswordError ? t.wrongPassword : t.genericError);
       setBusy(false);
     }
   };
