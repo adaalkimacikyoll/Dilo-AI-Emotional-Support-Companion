@@ -1,46 +1,150 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+/* Fonts are self-hosted (see main.tsx). Loading them from Google's servers would send visitors' IP addresses to Google. */
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* Dark mode follows the .dark class on <html>, set from the theme preference. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Libre Baskerville", serif;
-  --font-display: "Playfair Display", serif;
-  
+  /* Original Dilo typography: Libre Baskerville for text, Playfair Display for headings.
+     Vazirmatn covers Arabic and Persian glyphs. */
+  --font-sans: "Libre Baskerville", "Vazirmatn", Georgia, serif;
+  --font-serif: "Libre Baskerville", "Vazirmatn", Georgia, serif;
+  --font-display: "Playfair Display", "Vazirmatn", Georgia, serif;
+
+  /* Original Dilo palette: butter yellow with olive-butter accent */
   --color-butter-50: #fffdf0;
   --color-butter-100: #fffbc2;
   --color-butter-200: #fff785;
   --color-butter-300: #ffef47;
-  --color-butter-400: #ffe11a;
   --color-butter-500: #ffd700;
-  --color-butter-600: #e6c200;
-  --color-butter-700: #bfa100;
-  --color-butter-800: #998100;
-  --color-butter-900: #7d6a00;
-
   --color-olive-butter: #b8a34d;
-  --color-soft-pink: #fff0f3;
-  --color-soft-peach: #fff5eb;
+
+  --color-paper: #fffdf0;
+  --color-surface: #ffffff;
+  --color-ink: #292524;
+  --color-muted: #78716c;
+  --color-line: #fff3a8;
+  --color-moss: #b8a34d;
+  --color-moss-soft: #fffbc2;
+  --color-on-accent: #ffffff;
+  --color-sun: #ffd700;
+  --color-alert: #dc2626;
+  --color-alert-soft: #fef2f2;
 }
 
 @layer base {
+  .dark {
+    --color-paper: #0c0a09;
+    --color-surface: #1c1917;
+    --color-ink: #f5f5f4;
+    --color-muted: #a8a29e;
+    --color-line: #292524;
+    --color-moss: #b8a34d;
+    --color-moss-soft: #292524;
+    --color-on-accent: #ffffff;
+    --color-sun: #ffd700;
+    --color-alert: #f87171;
+    --color-alert-soft: #2a1414;
+  }
+
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+
   body {
-    @apply bg-butter-50 text-stone-800 font-serif;
+    @apply bg-paper text-ink font-sans antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-moss);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
-.markdown-body {
-  @apply prose prose-stone max-w-none font-serif dark:prose-invert;
+/* Dilo's replies: serif, generous leading, restrained Markdown. */
+.dilo-prose {
+  @apply font-serif text-ink;
+  line-height: 1.65;
+}
+.dilo-prose p {
+  margin: 0 0 0.85em;
+}
+.dilo-prose p:last-child,
+.dilo-prose ul:last-child,
+.dilo-prose ol:last-child {
+  margin-bottom: 0;
+}
+.dilo-prose ul,
+.dilo-prose ol {
+  margin: 0 0 0.85em;
+  padding-inline-start: 1.25em;
+}
+.dilo-prose ul {
+  list-style: disc;
+}
+.dilo-prose ol {
+  list-style: decimal;
+}
+.dilo-prose li {
+  margin-bottom: 0.3em;
+}
+.dilo-prose li::marker {
+  color: var(--color-muted);
+}
+.dilo-prose strong {
+  font-weight: 600;
+}
+.dilo-prose a {
+  color: var(--color-moss);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.markdown-body p {
-  @apply mb-4 leading-relaxed;
+.typing-dot {
+  animation: typing 1.2s infinite ease-in-out;
+}
+@keyframes typing {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+  }
+  30% {
+    opacity: 1;
+  }
 }
 
-.markdown-body ul {
-  @apply list-disc pl-5 mb-4;
+/* Legal pages */
+.legal-prose {
+  @apply text-sm leading-relaxed text-ink;
 }
-
-.markdown-body li {
-  @apply mb-1;
+.legal-prose h1 {
+  @apply mb-3 font-display text-2xl font-bold;
+}
+.legal-prose h2 {
+  @apply mt-6 mb-2 font-display text-lg font-bold;
+}
+.legal-prose p,
+.legal-prose ul {
+  margin: 0 0 0.75em;
+}
+.legal-prose ul {
+  list-style: disc;
+  padding-inline-start: 1.25em;
+}
+.legal-prose li {
+  margin-bottom: 0.3em;
 }
