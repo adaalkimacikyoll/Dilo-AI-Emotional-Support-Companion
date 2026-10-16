@@ -16,7 +16,8 @@ Dilo is an AI emotional support companion. It listens without judgement, adapts 
 
 - **On-device AI.** An open-source model (Qwen3 1.7B, Apache 2.0) runs locally via WebGPU. It is downloaded once, only after the user explicitly agrees.
 - **Two conversation styles.** *Friend* is casual and warm. *Psychological support* uses methods psychologists use (focused questions, reflection, pattern-spotting, CBT/ACT-informed techniques) without ever claiming to be a psychologist, diagnosing or commenting on medication.
-- **Just listen, or listen and give tips.** Switch at any time.
+- **Modes menu in the navbar.** Conversation style (Friend / Psychological support) and support type (Just listen / Listen and give tips), switchable at any time.
+- **Device accounts.** After consent, users create an account or sign in. Each account's conversations, journal, notes and mood live in its own vault, encrypted with a key derived from the account password (PBKDF2 + AES-GCM). Nothing is sent to a server, accounts don't sync between devices, and there is no password reset by design.
 - **Safety first.** A "Get help now" dialog is always one click away. A deterministic keyword check in 7 languages shows crisis lines under any message that signals risk, independent of the model; the model can flag risk too.
 - **Journal.** Every conversation is saved and can be continued, deleted, or locked with its own password (AES-256-GCM, PBKDF2). Private journal entries and notes are never sent to the AI.
 - **Consent first.** A blocking consent screen (18+, not a professional service, explicit consent for health-related data, privacy policy and terms) must be completed before anything else loads. Users can withdraw consent and delete everything in one click.
@@ -39,7 +40,7 @@ Dilo is an AI emotional support companion. It listens without judgement, adapts 
 ```
 Browser only
 ────────────
-consent screen ─▶ model setup (explicit download, cached afterwards)
+consent screen ─▶ device account (encrypted vault) ─▶ model setup (explicit download, cached afterwards)
 text input ─▶ keyword crisis check ─▶ crisis lines if needed
           ─▶ system prompt (style, support type, mood, language, safety)
           ─▶ Qwen3 1.7B on WebGPU (Web Worker) ─▶ streamed reply
@@ -56,7 +57,8 @@ src/lib/prompt.ts           system prompt and crisis marker
 src/lib/crisisDetect.ts     keyword safety net (7 languages)
 src/lib/legal.ts            Impressum, privacy policy, terms (de/en)
 src/lib/operator.ts         your name, address and email for the legal pages
-src/lib/lock.ts             password encryption for locked conversations
+src/lib/lock.ts             password-based encryption (conversation locks, account vaults)
+src/lib/accounts.ts         device accounts: create, sign in, encrypted vaults
 public/models/              model library (wasm), served from our own domain
 tests/                      unit tests
 ```

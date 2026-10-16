@@ -65,3 +65,35 @@ export const isLockedPayload = (v: unknown): v is LockedPayload =>
   typeof (v as LockedPayload).salt === "string" &&
   typeof (v as LockedPayload).iv === "string" &&
   typeof (v as LockedPayload).data === "string";
+
+// ---------- session keys (used by device accounts) ----------
+
+/** An encrypted value whose key is held in memory for the session. */
+export interface SealedPayload {
+  v: 1;
+  iv: string;
+  data: string;
+}
+
+/** Derives an AES-GCM key from a password. Pass the stored salt to reproduce an existing key. */
+export async function deriveKeyFromPassword(password: string, saltB64?: string): Promise<{ key: CryptoKey; salt: string }> {
+  const salt = saltB64 ? fromBase64(saltB64) : crypto.getRandomValues(new Uint8Array(16));
+  return { key: await deriveKey(password, salt), salt: toBase64(salt) };
+}
+
+/** Fast: uses an already-derived key, with a fresh IV every time. */
+export async function sealWithKey(key: CryptoKey, value: unknown): Promise<SealedPayload> {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, new TextEncoder().encode(JSON.stringify(value))));
+  return { v: 1, iv: toBase64(iv), data: toBase64(ciphertext) };
+}
+
+/** Throws WrongPasswordError if the key doesn't match. */
+export async function openWithKey<T>(key: CryptoKey, payload: SealedPayload): Promise<T> {
+  try {
+    const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromBase64(payload.iv) as BufferSource }, key, fromBase64(payload.data) as BufferSource);
+    return JSON.parse(new TextDecoder().decode(plaintext)) as T;
+  } catch {
+    throw new WrongPasswordError();
+  }
+}
