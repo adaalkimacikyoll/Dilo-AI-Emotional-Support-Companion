@@ -58,9 +58,39 @@ async function mockReply(request: ChatRequest, onText: (text: string) => void) {
   return extractCrisis(cleanReply(raw));
 }
 
-/** Sends the conversation to Dilo's server and streams the reply through onText. */
+/** Lower-case words without punctuation, for comparing replies. */
+const words = (text: string) => text.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+
+/** True when a reply is the same as, or barely different from, an earlier one (same opening or mostly the same words). */
+export function isRepeat(reply: string, earlier: string[]): boolean {
+  const a = words(reply);
+  if (a.length === 0) return false;
+  const setA = new Set(a);
+  return earlier.some((prev) => {
+    const b = words(prev);
+    if (b.length === 0) return false;
+    if (a.slice(0, 5).join(" ") === b.slice(0, 5).join(" ")) return true;
+    const setB = new Set(b);
+    const shared = [...setA].filter((w) => setB.has(w)).length;
+    return shared / new Set([...setA, ...setB]).size >= 0.6;
+  });
+}
+
+/** Sends the conversation to Dilo's server and streams the reply through onText. Asks once more if the reply repeats an earlier one. */
 export async function chatWithDilo(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean; harm: boolean }> {
   if (useMock()) return mockReply(request, onText);
+  const earlier = request.history.filter((t) => t.role === "model").map((t) => t.text).slice(-6);
+  const first = await requestOnce(request, onText);
+  if (first.crisis || first.harm || !isRepeat(first.text, earlier)) return first;
+  onText("");
+  try {
+    return await requestOnce(request, onText);
+  } catch {
+    return first;
+  }
+}
+
+async function requestOnce(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean; harm: boolean }> {
 
   let response: Response;
   try {

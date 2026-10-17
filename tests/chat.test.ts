@@ -337,3 +337,17 @@ describe("legal texts", () => {
     expect(hasPlaceholders()).toBe(false);
   });
 });
+
+import { isRepeat } from "../src/lib/api";
+
+describe("isRepeat", () => {
+  const earlier = ["Aww no, my poor thing. Come here. You've got this."];
+  it("catches identical and near-identical replies", () => {
+    expect(isRepeat("Aww no, my poor thing. Come here. You've got this.", earlier)).toBe(true);
+    expect(isRepeat("Aww no my poor thing, come here! You've totally got this.", earlier)).toBe(true);
+  });
+  it("lets genuinely different replies through", () => {
+    expect(isRepeat("Hey, of course you do. Remember last month when you thought the same and nailed it?", earlier)).toBe(false);
+    expect(isRepeat("Anything", [])).toBe(false);
+  });
+});
