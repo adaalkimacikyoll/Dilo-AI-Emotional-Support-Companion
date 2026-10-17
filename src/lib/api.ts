@@ -168,42 +168,73 @@ export function cleanReply(raw: string): string {
     .trimStart();
 }
 
-export function buildMessages(request: ChatRequest): ChatCompletionMessageParam[] {
+/** Lower-case words without punctuation, for comparing replies. */
+const words = (text: string) => text.toLocaleLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+
+/** True when a reply is the same as, or barely different from, an earlier one (same opening or mostly the same words). */
+export function isRepeat(reply: string, earlier: string[]): boolean {
+  const a = words(reply);
+  if (a.length === 0) return false;
+  const setA = new Set(a);
+  return earlier.some((prev) => {
+    const b = words(prev);
+    if (b.length === 0) return false;
+    if (a.slice(0, 5).join(" ") === b.slice(0, 5).join(" ")) return true;
+    const setB = new Set(b);
+    const shared = [...setA].filter((w) => setB.has(w)).length;
+    return shared / new Set([...setA, ...setB]).size >= 0.6;
+  });
+}
+
+export function buildMessages(request: ChatRequest, avoid: string[] = []): ChatCompletionMessageParam[] {
+  const system = getSystemInstruction(request.language, request.mode, request.mood, request.support);
+  // Small models copy their own earlier replies; list them explicitly so this one comes out different.
+  const avoidNote = avoid.length
+    ? `\n\nYou already wrote these replies. Your next reply must be completely different from all of them (different opening, different words) and must answer the user's newest message:\n${avoid.map((r) => `- "${r.slice(0, 300)}"`).join("\n")}`
+    : "";
   return [
-    { role: "system", content: getSystemInstruction(request.language, request.mode, request.mood, request.support) },
+    { role: "system", content: system + avoidNote },
     ...trimHistory(request.history).map(
       (t): ChatCompletionMessageParam => (t.role === "model" ? { role: "assistant", content: t.text } : { role: "user", content: t.text }),
     ),
   ];
 }
 
-/** Generates Dilo's reply on the device, streaming partial text through onText. */
+/** Generates Dilo's reply on the device, streaming partial text through onText. Regenerates replies that repeat earlier ones. */
 export async function chatWithDilo(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean }> {
   if (!enginePromise) throw new ChatError("not_ready");
   if (useMock()) return mockReply(request, onText);
   const engine = await enginePromise;
-  let raw = "";
-  try {
-    const stream = await engine.chat.completions.create({
-      messages: buildMessages(request),
-      stream: true,
-      temperature: request.mode === "psychologist" ? 0.5 : 0.8,
-      // Discourage the small model from repeating earlier replies.
-      frequency_penalty: 0.4,
-      presence_penalty: 0.4,
-      max_tokens: LIMITS.maxReplyTokens,
-      extra_body: { enable_thinking: false },
-    });
-    for await (const chunk of stream) {
-      raw += chunk.choices[0]?.delta?.content ?? "";
-      onText(extractCrisis(cleanReply(raw)).text);
+  const earlier = request.history.filter((t) => t.role === "model").map((t) => t.text).slice(-6);
+  const avoid = [...earlier];
+  let result = { text: "", crisis: false };
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let raw = "";
+    onText("");
+    try {
+      const stream = await engine.chat.completions.create({
+        messages: buildMessages(request, avoid),
+        stream: true,
+        temperature: (request.mode === "psychologist" ? 0.5 : 0.8) + attempt * 0.15,
+        frequency_penalty: 0.4,
+        presence_penalty: 0.4,
+        max_tokens: LIMITS.maxReplyTokens,
+        extra_body: { enable_thinking: false },
+      });
+      for await (const chunk of stream) {
+        raw += chunk.choices[0]?.delta?.content ?? "";
+        onText(extractCrisis(cleanReply(raw)).text);
+      }
+    } catch (error) {
+      throw new ChatError(classifyError(error, "generation_failed"));
     }
-  } catch (error) {
-    throw new ChatError(classifyError(error, "generation_failed"));
+    result = extractCrisis(cleanReply(raw));
+    if (!result.text) throw new ChatError("generation_failed");
+    if (result.crisis || !isRepeat(result.text, earlier)) break;
+    avoid.push(result.text);
   }
-  const { text, crisis } = extractCrisis(cleanReply(raw));
-  if (!text) throw new ChatError("generation_failed");
-  return { text, crisis };
+  return result;
 }
 
 async function mockReply(request: ChatRequest, onText: (text: string) => void) {
