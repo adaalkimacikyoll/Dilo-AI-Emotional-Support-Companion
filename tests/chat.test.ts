@@ -34,7 +34,7 @@ describe("getSystemInstruction", () => {
     const friend = getSystemInstruction("en", "friendly", null, "tips");
     const psych = getSystemInstruction("en", "psychologist", null, "tips");
     expect(friend).toContain("Mode: Friend");
-    expect(friend).toContain("close friend");
+    expect(friend).toContain("best friend");
     expect(friend).toContain("No lists, numbering");
     expect(friend).toContain("No psychology vocabulary");
     expect(friend).not.toContain("Formulate");
