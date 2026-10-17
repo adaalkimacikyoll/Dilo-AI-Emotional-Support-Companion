@@ -27,14 +27,15 @@ describe("getSystemInstruction", () => {
     expect(prompt).toContain("always reply in Turkish");
     expect(prompt).toContain("current mood as: stressed");
     expect(prompt).toContain("[CRISIS]");
-    expect(prompt).toContain("Do not use emojis");
+    expect(prompt).toContain("Never use emojis");
   });
 
   it("makes Friend and Psychological support clearly different", () => {
     const friend = getSystemInstruction("en", "friendly", null, "tips");
     const psych = getSystemInstruction("en", "psychologist", null, "tips");
     expect(friend).toContain("Mode: Friend");
-    expect(friend).toContain("best friend");
+    expect(friend).toContain("close friend");
+    expect(friend).toContain("No lists, numbering");
     expect(friend).toContain("No psychology vocabulary");
     expect(friend).not.toContain("Formulate");
     expect(psych).toContain("Mode: Psychological support");
