@@ -187,7 +187,10 @@ export async function chatWithDilo(request: ChatRequest, onText: (text: string) 
     const stream = await engine.chat.completions.create({
       messages: buildMessages(request),
       stream: true,
-      temperature: request.mode === "psychologist" ? 0.5 : 0.7,
+      temperature: request.mode === "psychologist" ? 0.5 : 0.8,
+      // Discourage the small model from repeating earlier replies.
+      frequency_penalty: 0.4,
+      presence_penalty: 0.4,
       max_tokens: LIMITS.maxReplyTokens,
       extra_body: { enable_thinking: false },
     });
