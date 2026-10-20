@@ -301,6 +301,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "No connection. Check your internet connection and try again.",
       busy: "Dilo is very busy right now. Try again in a moment.",
       generation_failed: "Dilo couldn't finish a reply. Try sending your message again.",
+      quota_reached: "Dilo is taking a break for now and can't reply at the moment. Your conversations are safe; please try again later.",
     },
     quickSuggestions: ["I'm feeling tired", "I just want to talk", "I want to feel better", "I'm feeling anxious"],
     moods: {
@@ -493,6 +494,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "Bağlantı yok. İnternet bağlantını kontrol edip tekrar dene.",
       busy: "Dilo şu an çok yoğun. Biraz sonra tekrar dene.",
       generation_failed: "Dilo cevabı tamamlayamadı. Mesajını tekrar göndermeyi dene.",
+      quota_reached: "Dilo şu an biraz mola verdi ve şimdilik cevap veremiyor. Sohbetlerin güvende; lütfen daha sonra tekrar dene.",
     },
     quickSuggestions: ["Kendimi yorgun hissediyorum", "Sadece konuşmak istiyorum", "Daha iyi hissetmek istiyorum", "Kaygılı hissediyorum"],
     moods: {
@@ -685,6 +687,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "Keine Verbindung. Prüfe deine Internetverbindung und versuche es erneut.",
       busy: "Dilo ist gerade sehr ausgelastet. Versuche es gleich noch einmal.",
       generation_failed: "Dilo konnte die Antwort nicht abschließen. Sende deine Nachricht erneut.",
+      quota_reached: "Dilo macht gerade eine Pause und kann im Moment nicht antworten. Deine Gespräche sind sicher; bitte versuch es später noch einmal.",
     },
     quickSuggestions: ["Ich bin müde", "Ich möchte einfach reden", "Ich möchte mich besser fühlen", "Ich fühle mich ängstlich"],
     moods: {
@@ -877,6 +880,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "Pas de connexion. Vérifiez votre connexion Internet et réessayez.",
       busy: "Dilo est très sollicité en ce moment. Réessayez dans un instant.",
       generation_failed: "Dilo n'a pas pu terminer sa réponse. Renvoyez votre message.",
+      quota_reached: "Dilo fait une pause et ne peut pas répondre pour le moment. Vos conversations sont en sécurité ; réessayez plus tard.",
     },
     quickSuggestions: ["Je suis fatigué", "J'ai juste envie de parler", "Je veux me sentir mieux", "Je me sens anxieux"],
     moods: {
@@ -1069,6 +1073,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "No hay conexión. Revisa tu conexión a Internet y vuelve a intentarlo.",
       busy: "Dilo está muy ocupado ahora mismo. Inténtalo de nuevo en un momento.",
       generation_failed: "Dilo no pudo terminar la respuesta. Vuelve a enviar tu mensaje.",
+      quota_reached: "Dilo está tomando un descanso y no puede responder por ahora. Tus conversaciones están a salvo; inténtalo más tarde.",
     },
     quickSuggestions: ["Me siento cansado", "Solo quiero hablar", "Quiero sentirme mejor", "Me siento ansioso"],
     moods: {
@@ -1261,6 +1266,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "لا يوجد اتصال. تحقّق من اتصالك بالإنترنت وحاول مرة أخرى.",
       busy: "ديلو مشغول جدًا الآن. حاول مرة أخرى بعد قليل.",
       generation_failed: "لم يتمكن ديلو من إكمال الرد. أعد إرسال رسالتك.",
+      quota_reached: "ديلو في استراحة الآن ولا يستطيع الرد حاليًا. محادثاتك آمنة؛ حاول مرة أخرى لاحقًا.",
     },
     quickSuggestions: ["أشعر بالتعب", "أريد فقط أن أتحدث", "أريد أن أشعر بتحسن", "أشعر بالقلق"],
     moods: {
@@ -1453,6 +1459,7 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
       network: "اتصال برقرار نیست. اینترنتت را بررسی کن و دوباره امتحان کن.",
       busy: "دیلو الان خیلی شلوغ است. کمی بعد دوباره امتحان کن.",
       generation_failed: "دیلو نتوانست پاسخ را کامل کند. پیامت را دوباره بفرست.",
+      quota_reached: "دیلو فعلاً در حال استراحت است و نمی‌تواند پاسخ بدهد. گفتگوهایت امن هستند؛ لطفاً بعداً دوباره امتحان کن.",
     },
     quickSuggestions: ["احساس خستگی می‌کنم", "فقط می‌خواهم حرف بزنم", "می‌خواهم حالم بهتر شود", "احساس اضطراب دارم"],
     moods: {

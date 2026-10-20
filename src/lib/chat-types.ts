@@ -26,7 +26,7 @@ export interface ChatRequest {
   mood: MoodId | null;
 }
 
-export type ChatErrorKind = "not_configured" | "rate_limited" | "bad_request" | "network" | "busy" | "generation_failed";
+export type ChatErrorKind = "not_configured" | "rate_limited" | "bad_request" | "network" | "busy" | "generation_failed" | "quota_reached";
 
 export const LIMITS = {
   /** Requests with more turns than this are rejected by the server. */

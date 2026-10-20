@@ -4,7 +4,7 @@ import { LIMITS } from "../src/lib/chat-types";
 import { detectCrisis, detectHarmToOthers } from "../src/lib/crisisDetect";
 import { hasPlaceholders, LEGAL } from "../src/lib/legal";
 import { cleanReply, extractCrisis, getSystemInstruction } from "../src/lib/prompt";
-import { buildMessages, classifyStatus, DEFAULT_MODEL, handleRequest, parseChatRequest, resetRateLimits, sseToText } from "../server/chat";
+import { buildMessages, classifyStatus, DEFAULT_MODEL, DEFAULT_TOKEN_BUDGET, handleRequest, tokenBudget, parseChatRequest, resetRateLimits, sseToText } from "../server/chat";
 
 const valid = {
   history: [
@@ -240,7 +240,7 @@ describe("handleRequest", () => {
       headers: { "content-type": "application/json", "x-forwarded-for": ip },
       body: typeof body === "string" ? body : JSON.stringify(body),
     });
-  const env = { AI_API_KEY: "test-key" };
+  const env = { AI_API_KEY: "test-key", AI_TOKEN_BUDGET: "off" };
 
   it("refuses a conversation that contains a stated intent to hurt someone", async () => {
     const fetchImpl = vi.fn<typeof fetch>();
@@ -349,5 +349,75 @@ describe("isRepeat", () => {
   it("lets genuinely different replies through", () => {
     expect(isRepeat("Hey, of course you do. Remember last month when you thought the same and nailed it?", earlier)).toBe(false);
     expect(isRepeat("Anything", [])).toBe(false);
+  });
+});
+
+
+describe("free-token budget", () => {
+  const post = (body: unknown) =>
+    new Request("http://localhost/api/chat", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "7.7.7.7" }, body: JSON.stringify(body) });
+  const body = { history: [{ role: "user", text: "Hi" }], language: "en", mode: "friendly", support: "tips", mood: null };
+  const kvEnv = (budget?: string) => ({ AI_API_KEY: "k", KV_REST_API_URL: "https://kv.example", KV_REST_API_TOKEN: "t", ...(budget ? { AI_TOKEN_BUDGET: budget } : {}) });
+  const usageStream = () =>
+    new Response(sse(delta("Hey"), JSON.stringify({ choices: [], usage: { total_tokens: 123 } }), "[DONE]"), { status: 200 });
+
+  /** In-memory stand-in for Upstash, plus the model. */
+  function fakes(start = 0) {
+    const state = { total: start, modelCalls: 0 };
+    const fetchImpl = vi.fn<typeof fetch>(async (url, init) => {
+      if (String(url).startsWith("https://kv.example")) {
+        const [, , n] = JSON.parse(String(init?.body));
+        state.total += Number(n);
+        return Response.json({ result: state.total });
+      }
+      state.modelCalls++;
+      return usageStream();
+    });
+    return { state, fetchImpl };
+  }
+
+  beforeEach(() => resetRateLimits());
+
+  it("defaults to 900k and can be turned off", () => {
+    expect(tokenBudget({})).toBe(DEFAULT_TOKEN_BUDGET);
+    expect(tokenBudget({ AI_TOKEN_BUDGET: "500000" })).toBe(500000);
+    expect(tokenBudget({ AI_TOKEN_BUDGET: "off" })).toBeNull();
+    expect(tokenBudget({ AI_TOKEN_BUDGET: "nonsense" })).toBe(DEFAULT_TOKEN_BUDGET);
+  });
+
+  it("fails closed when the limit is on but no counter is configured", async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    const res = await handleRequest(post(body), { AI_API_KEY: "k" }, fetchImpl);
+    expect(res.status).toBe(500);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("records the real usage after a reply", async () => {
+    const { state, fetchImpl } = fakes();
+    const res = await handleRequest(post(body), kvEnv(), fetchImpl);
+    expect(await res.text()).toBe("Hey");
+    expect(state.total).toBe(123);
+  });
+
+  it("stops calling the model once the budget is used up", async () => {
+    const { state, fetchImpl } = fakes(899_000);
+    const res = await handleRequest(post(body), kvEnv(), fetchImpl);
+    expect(res.status).toBe(503);
+    expect((await res.json()).error).toBe("quota_reached");
+    expect(state.modelCalls).toBe(0);
+    expect(state.total).toBe(899_000); // reservation given back
+  });
+
+  it("gives the reservation back when the provider fails", async () => {
+    const state = { total: 0 };
+    const fetchImpl = vi.fn<typeof fetch>(async (url, init) => {
+      if (String(url).startsWith("https://kv.example")) {
+        state.total += Number(JSON.parse(String(init?.body))[2]);
+        return Response.json({ result: state.total });
+      }
+      return new Response("err", { status: 500 });
+    });
+    await handleRequest(post(body), kvEnv(), fetchImpl);
+    expect(state.total).toBe(0);
   });
 });

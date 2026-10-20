@@ -24,6 +24,10 @@ function devApi(env: Record<string, string>): Plugin {
           AI_API_KEY: env.AI_API_KEY,
           AI_BASE_URL: env.AI_BASE_URL,
           AI_MODEL: env.AI_MODEL,
+          // Local development has no shared counter, so the free-token limit is off unless configured.
+          AI_TOKEN_BUDGET: env.AI_TOKEN_BUDGET ?? 'off',
+          KV_REST_API_URL: env.KV_REST_API_URL,
+          KV_REST_API_TOKEN: env.KV_REST_API_TOKEN,
         }, fetch, { rateLimit: false }); // local development only; production always rate limits
         res.statusCode = response.status;
         response.headers.forEach((value, key) => res.setHeader(key, value));

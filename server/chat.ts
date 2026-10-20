@@ -12,6 +12,13 @@ export interface ChatEnv {
   AI_API_KEY?: string;
   AI_BASE_URL?: string;
   AI_MODEL?: string;
+  /** Total tokens Dilo may ever use (default 900,000, under Scaleway's 1,000,000 free tokens). "off" removes the limit. */
+  AI_TOKEN_BUDGET?: string;
+  /** Shared counter (Upstash Redis via the Vercel Marketplace sets the KV_* names). */
+  KV_REST_API_URL?: string;
+  KV_REST_API_TOKEN?: string;
+  UPSTASH_REDIS_REST_URL?: string;
+  UPSTASH_REDIS_REST_TOKEN?: string;
 }
 
 export const DEFAULT_BASE_URL = "https://api.scaleway.ai/v1";
@@ -79,13 +86,60 @@ export function isRateLimited(key: string, now = Date.now()) {
 
 export const resetRateLimits = () => hits.clear();
 
+// ---------- token budget ----------
+// Keeps Dilo inside the provider's free tokens: once the budget is used up, the server stops calling the model
+// and the app says Dilo is taking a break. The counter holds a single number and no personal data.
+
+export const DEFAULT_TOKEN_BUDGET = 900_000;
+export const BUDGET_KEY = "dilo:ai-tokens-used";
+
+/** null means no limit ("off"); anything unreadable falls back to the safe default. */
+export function tokenBudget(env: ChatEnv): number | null {
+  const raw = env.AI_TOKEN_BUDGET?.trim().toLowerCase();
+  if (raw === "off") return null;
+  const n = Number(raw);
+  return raw && Number.isFinite(n) && n >= 0 ? n : DEFAULT_TOKEN_BUDGET;
+}
+
+export interface TokenCounter {
+  /** Adds n (may be negative) and returns the new total. */
+  add(n: number): Promise<number>;
+}
+
+/** Upstash Redis REST counter, or null when no counter is configured. */
+export function createCounter(env: ChatEnv, fetchImpl: typeof fetch = fetch): TokenCounter | null {
+  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL;
+  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN;
+  if (!url || !token) return null;
+  return {
+    async add(n) {
+      const res = await fetchImpl(url.replace(/\/$/, ""), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(["INCRBY", BUDGET_KEY, String(Math.round(n))]),
+      });
+      const data = (await res.json()) as { result?: number; error?: string };
+      if (!res.ok || typeof data.result !== "number") throw new Error(data.error || `counter ${res.status}`);
+      return data.result;
+    },
+  };
+}
+
+/** Cautious token estimate (rounds up generously) used to reserve budget before a request. */
+export const estimateTokens = (chars: number) => Math.ceil(chars / 2.5);
+
 // ---------- streaming ----------
 
 /** Turns an OpenAI-style server-sent-events stream into a stream of plain text deltas. */
-export function sseToText(body: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+export function sseToText(
+  body: ReadableStream<Uint8Array>,
+  onDone?: (result: { usageTokens: number | null; outputChars: number }) => Promise<void> | void,
+): ReadableStream<Uint8Array> {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = "";
+  let usageTokens: number | null = null;
+  let outputChars = 0;
   return body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -98,11 +152,24 @@ export function sseToText(body: ReadableStream<Uint8Array>): ReadableStream<Uint
           const data = trimmed.slice(5).trim();
           if (!data || data === "[DONE]") continue;
           try {
-            const delta = JSON.parse(data)?.choices?.[0]?.delta?.content;
-            if (typeof delta === "string" && delta) controller.enqueue(encoder.encode(delta));
+            const parsed = JSON.parse(data);
+            const delta = parsed?.choices?.[0]?.delta?.content;
+            if (typeof delta === "string" && delta) {
+              outputChars += delta.length;
+              controller.enqueue(encoder.encode(delta));
+            }
+            const total = parsed?.usage?.total_tokens;
+            if (typeof total === "number") usageTokens = total;
           } catch {
             // Ignore keep-alive or malformed lines.
           }
+        }
+      },
+      async flush() {
+        try {
+          await onDone?.({ usageTokens, outputChars });
+        } catch {
+          // Never break a finished reply over bookkeeping.
         }
       },
     }),
@@ -116,6 +183,7 @@ const STATUS: Record<ChatErrorKind, number> = {
   network: 502,
   busy: 503,
   generation_failed: 502,
+  quota_reached: 503,
 };
 
 const fail = (error: ChatErrorKind) =>
@@ -154,6 +222,36 @@ export async function handleRequest(
   if (chat.history.some((t) => t.role === "user" && detectHarmToOthers(t.text))) return fail("bad_request");
   if (!env.AI_API_KEY) return fail("not_configured");
 
+  const messages = buildMessages(chat);
+  const inputTokens = estimateTokens(messages.reduce((n, m) => n + m.content.length, 0));
+
+  // Reserve the worst case before calling the model, so even many requests at once can't go over the budget.
+  const budget = tokenBudget(env);
+  let counter: TokenCounter | null = null;
+  let reserved = 0;
+  if (budget !== null) {
+    counter = createCounter(env, fetchImpl);
+    if (!counter) {
+      console.error("Token budget is on but no counter is configured (KV_REST_API_URL / KV_REST_API_TOKEN)");
+      return fail("not_configured"); // fail closed: never risk paid usage
+    }
+    reserved = inputTokens + LIMITS.maxReplyTokens;
+    let used: number;
+    try {
+      used = await counter.add(reserved);
+    } catch (e) {
+      console.error("Token counter error", e);
+      return fail("busy");
+    }
+    if (used > budget) {
+      await counter.add(-reserved).catch(() => {});
+      return fail("quota_reached");
+    }
+  }
+  const refund = async () => {
+    if (counter && reserved) await counter.add(-reserved).catch(() => {});
+  };
+
   let upstream: Response;
   try {
     upstream = await fetchImpl(`${(env.AI_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "")}/chat/completions`, {
@@ -161,8 +259,9 @@ export async function handleRequest(
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.AI_API_KEY}` },
       body: JSON.stringify({
         model: env.AI_MODEL || DEFAULT_MODEL,
-        messages: buildMessages(chat),
+        messages,
         stream: true,
+        stream_options: { include_usage: true },
         // Friend replies are looser and more playful; psychological support stays focused.
         temperature: chat.mode === "psychologist" ? 0.6 : 0.85,
         top_p: 0.95,
@@ -170,14 +269,23 @@ export async function handleRequest(
       }),
     });
   } catch {
+    await refund();
     return fail("network");
   }
   if (!upstream.ok || !upstream.body) {
     console.error("AI provider error", upstream.status);
+    await refund();
     return fail(classifyStatus(upstream.status));
   }
 
-  return new Response(sseToText(upstream.body), {
+  // Replace the reservation with the real usage (or a cautious estimate if the provider didn't report it).
+  const settle = async ({ usageTokens, outputChars }: { usageTokens: number | null; outputChars: number }) => {
+    if (!counter) return;
+    const actual = usageTokens ?? inputTokens + estimateTokens(outputChars);
+    await counter.add(actual - reserved);
+  };
+
+  return new Response(sseToText(upstream.body, settle), {
     headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
   });
 }

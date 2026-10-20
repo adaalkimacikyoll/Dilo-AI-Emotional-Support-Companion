@@ -72,8 +72,9 @@ tests/                      unit tests
 
 1. Create a Scaleway account and an API key: console → **IAM & API keys** → **API keys** → **Generate API key**. Copy the **secret key**.
 2. In Vercel → Project → **Settings → Environment Variables**, add `AI_API_KEY` with the secret key (all environments).
-3. Optional: `AI_MODEL` (default `gemma-4-26b-a4b-it`) and `AI_BASE_URL` (default `https://api.scaleway.ai/v1`).
-4. Fill in `src/lib/operator.ts` for the Impressum (`npm run check:legal`) and have the legal texts reviewed by a lawyer.
+3. Free-token limit: in Vercel → Project → **Storage**, add **Upstash for Redis** (free plan, region Frankfurt) and connect it to the project. This adds `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Dilo then stops at 900,000 tokens (change with `AI_TOKEN_BUDGET`, or set it to `off`) and shows "Dilo is taking a break" instead of creating costs. Without the counter, production refuses to call the model.
+4. Optional: `AI_MODEL` (default `gemma-4-26b-a4b-it`) and `AI_BASE_URL` (default `https://api.scaleway.ai/v1`).
+5. Fill in `src/lib/operator.ts` for the Impressum (`npm run check:legal`) and have the legal texts reviewed by a lawyer.
 
 ## Run locally
 
