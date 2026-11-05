@@ -1,6 +1,6 @@
-import { LANGUAGE_CODES, LIMITS, MODES, MOOD_IDS, SUPPORT_STYLES, type ChatErrorKind, type ChatRequest, type ChatTurn } from "../src/lib/chat-types";
-import { getSystemInstruction } from "../src/lib/prompt";
-import { detectHarmToOthers } from "../src/lib/crisisDetect";
+import { LANGUAGE_CODES, LIMITS, MODES, MOOD_IDS, SUPPORT_STYLES, type ChatErrorKind, type ChatRequest, type ChatTurn } from "../src/lib/chat-types.js";
+import { getSystemInstruction } from "../src/lib/prompt.js";
+import { detectHarmToOthers } from "../src/lib/crisisDetect.js";
 
 /**
  * Dilo's chat endpoint. It forwards the conversation to an OpenAI-compatible model API hosted in the EU

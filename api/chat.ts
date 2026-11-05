@@ -1,4 +1,4 @@
-import { handleRequest } from "../server/chat";
+import { handleRequest } from "../server/chat.js";
 
 // Vercel Function: POST /api/chat
 // Set AI_API_KEY (and optionally AI_MODEL, AI_BASE_URL) in Vercel > Project > Settings > Environment Variables.
