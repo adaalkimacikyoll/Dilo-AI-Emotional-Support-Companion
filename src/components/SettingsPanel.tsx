@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
-import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound, KeyRound } from "lucide-react";
+import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound, KeyRound, Smartphone, Check } from "lucide-react";
 import { cn } from "../lib/utils";
 import { LANGUAGES } from "../lib/api";
 import type { LegalPage } from "../lib/legal";
 import { LegalLinks } from "./LegalDialog";
 import { MoodPicker } from "./MoodPicker";
+import { useInstall } from "../hooks/useInstall";
 import type { LanguageCode, MoodId, Strings } from "../lib/translations";
 
 export type Theme = "light" | "dark" | "system";
@@ -116,6 +117,8 @@ export function SettingsPanel(p: Props) {
         </div>
       </section>
 
+      <InstallSection t={t} />
+
       <section aria-labelledby="mood-heading" className="space-y-3 border-t border-line pt-6">
         <div>
           <h3 id="mood-heading" className="font-display text-lg font-bold text-ink">
@@ -224,5 +227,43 @@ export function SettingsPanel(p: Props) {
         </button>
       </section>
     </div>
+  );
+}
+
+
+/** Install Dilo as an app: the browser's own dialog where it exists, short instructions elsewhere. */
+function InstallSection({ t }: { t: Strings }) {
+  const { state, install } = useInstall();
+  return (
+    <section aria-labelledby="install-heading" className="space-y-3 border-t border-line pt-6">
+      <h3 id="install-heading" className="font-display text-lg font-bold text-ink">
+        {t.installSection}
+      </h3>
+      {state === "installed" ? (
+        <p className="flex items-center gap-2 text-sm text-ink">
+          <Check className="h-4 w-4 text-moss" aria-hidden="true" />
+          {t.installDone}
+        </p>
+      ) : (
+        <>
+          <p className="text-sm text-muted">{t.installHint}</p>
+          {state === "prompt" ? (
+            <button
+              type="button"
+              onClick={install}
+              className="flex items-center gap-2 rounded-lg bg-moss px-4 py-2 text-sm font-semibold text-on-accent"
+            >
+              <Smartphone className="h-4 w-4" aria-hidden="true" />
+              {t.installButton}
+            </button>
+          ) : (
+            <p className="flex items-start gap-2 rounded-lg bg-moss-soft px-3 py-2 text-sm text-ink">
+              <Smartphone className="mt-0.5 h-4 w-4 shrink-0 text-moss" aria-hidden="true" />
+              {state === "ios" ? t.installIos : t.installManual}
+            </p>
+          )}
+        </>
+      )}
+    </section>
   );
 }
