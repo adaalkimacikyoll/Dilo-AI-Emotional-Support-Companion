@@ -54,9 +54,27 @@ const PATTERNS: RegExp[] = [
   /به خودم آسیب/,
 ];
 
+/** Greek without accents (people often type without them), so one pattern covers both spellings. */
+const stripGreekAccents = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/ς/g, "σ");
+
+// Greek (matched against accent-free text) and Greeklish.
+const GREEK_PATTERNS: RegExp[] = [
+  /αυτοκτον/,
+  /θελω να πεθανω/,
+  /να σκοτωσω τον εαυτο μου/,
+  /να βλαψω τον εαυτο μου/,
+  /αυτοτραυματισ/,
+  /δεν θελω να ζω/,
+  /να τελειωσω τη ζωη μου/,
+  /\baftokton/,
+  /\bthelo na pethano\b/,
+];
+
 export function detectCrisis(text: string): boolean {
   const normalized = text.normalize("NFC");
-  return PATTERNS.some((p) => p.test(normalized));
+  if (PATTERNS.some((p) => p.test(normalized))) return true;
+  const greek = stripGreekAccents(text);
+  return GREEK_PATTERNS.some((p) => p.test(greek));
 }
 
 /**
@@ -86,8 +104,18 @@ const HARM_OTHERS_PATTERNS: RegExp[] = [
 const HARM_OTHERS_TURKISH = /öldüreceğim|öldürecem|öldürcem|öldürücem|öldürmek istiyorum|gebertece[ğk]im|gebertcem|gebertmek istiyorum|bıçaklayacağım|zarar vereceğim|zarar vermek istiyorum|canını yakacağım/i;
 const TURKISH_SELF = /kendimi|kendime|kendi canım/i;
 
+// Greek (accent-free) and Greeklish: "θα τον σκοτώσω", "θέλω να τη σκοτώσω", "θα του κάνω κακό".
+const HARM_OTHERS_GREEK: RegExp[] = [
+  /(θα|θελω να) (τον|την|τη|τουσ|τισ) (σκοτωσω|μαχαιρωσω|πυροβολησω)/,
+  /(θα|θελω να) (του|τησ|τουσ) κανω κακο/,
+  /(θα|θελω να) σκοτωσω (καποιον|ολουσ)/,
+  /\btha (ton|tin|ti|tous) skotoso\b/,
+];
+
 export function detectHarmToOthers(text: string): boolean {
   const normalized = text.normalize("NFC");
   if (HARM_OTHERS_PATTERNS.some((p) => p.test(normalized))) return true;
+  const greek = stripGreekAccents(text);
+  if (HARM_OTHERS_GREEK.some((p) => p.test(greek))) return true;
   return HARM_OTHERS_TURKISH.test(normalized) && !TURKISH_SELF.test(normalized);
 }

@@ -15,6 +15,7 @@ export const CRISIS_LINES: CrisisLine[] = [
   { country: "DE", name: "TelefonSeelsorge", phone: "0800 111 0 111", tel: "08001110111", note: "0800 111 0 222" },
   { country: "FR", name: "3114 – Prévention du suicide", phone: "3114", tel: "3114" },
   { country: "ES", name: "Línea 024", phone: "024", tel: "024" },
+  { country: "GR", name: "Κλίμακα – 1018", phone: "1018", tel: "1018", note: "24/7" },
   { country: "US", name: "988 Suicide & Crisis Lifeline", phone: "988", tel: "988", note: "SMS 988" },
 ];
 
@@ -23,6 +24,7 @@ export const FIND_A_HELPLINE_URL = "https://findahelpline.com";
 /** Country pages on Find A Helpline for languages whose main country isn't listed above. */
 export const HELPLINE_COUNTRY_BY_LANGUAGE: Record<string, string> = {
   tr: "tr",
+  el: "gr",
   fa: "ir",
 };
 

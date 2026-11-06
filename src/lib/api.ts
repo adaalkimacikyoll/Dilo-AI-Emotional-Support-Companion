@@ -15,6 +15,7 @@ export const LANGUAGES: { code: LanguageCode; name: string; rtl: boolean }[] = [
   { code: "de", name: "Deutsch", rtl: false },
   { code: "fr", name: "Français", rtl: false },
   { code: "es", name: "Español", rtl: false },
+  { code: "el", name: "Ελληνικά", rtl: false },
   { code: "ar", name: "العربية", rtl: true },
   { code: "fa", name: "فارسی", rtl: true },
 ];

@@ -1,6 +1,6 @@
 /** Types and limits shared by the browser app and the chat server function. */
 
-export const LANGUAGE_CODES = ["en", "tr", "de", "fr", "es", "ar", "fa"] as const;
+export const LANGUAGE_CODES = ["en", "tr", "de", "fr", "es", "el", "ar", "fa"] as const;
 export type LanguageCode = (typeof LANGUAGE_CODES)[number];
 
 export const MOOD_IDS = ["happy", "sad", "anxious", "tired", "stressed", "energetic"] as const;

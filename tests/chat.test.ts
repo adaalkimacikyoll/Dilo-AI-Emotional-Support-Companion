@@ -462,3 +462,19 @@ describe("reasoning is turned off", () => {
     expect(await (await handleRequest(post(), { AI_API_KEY: "k", AI_TOKEN_BUDGET: "off" }, fetchImpl)).text()).toBe("Hey");
   });
 });
+
+
+describe("Greek safety checks", () => {
+  it.each(["θέλω να πεθάνω", "θελω να πεθανω", "σκέφτομαι την αυτοκτονία", "δεν θέλω να ζω πια", "thelo na pethano"])("crisis: %j", (text) =>
+    expect(detectCrisis(text)).toBe(true),
+  );
+  it.each(["θα τον σκοτώσω", "Θέλω να τη σκοτώσω", "θα τους σκοτώσω όλους", "θα του κάνω κακό", "tha ton skotoso"])("harm to others: %j", (text) =>
+    expect(detectHarmToOthers(text)).toBe(true),
+  );
+  it.each(["η μαμά μου θα με σκοτώσει", "είμαι πολύ κουρασμένη", "θέλω να σκοτώσω τον εαυτό μου"])("not harm to others: %j", (text) =>
+    expect(detectHarmToOthers(text)).toBe(false),
+  );
+  it("Greek replies are requested in Greek", () => {
+    expect(getSystemInstruction("el", "friendly", null, "tips")).toContain("always reply in Greek");
+  });
+});
