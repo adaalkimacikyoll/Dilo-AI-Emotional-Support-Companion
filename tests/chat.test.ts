@@ -478,3 +478,26 @@ describe("Greek safety checks", () => {
     expect(getSystemInstruction("el", "friendly", null, "tips")).toContain("always reply in Greek");
   });
 });
+
+import { AFFIRMATIONS, dailyPicks, localDayNumber, QUOTES } from "../src/lib/daily";
+import { LANGUAGE_CODES } from "../src/lib/chat-types";
+
+describe("quote and affirmation of the day", () => {
+  it("has every quote and affirmation in every language", () => {
+    for (const q of QUOTES) for (const code of LANGUAGE_CODES) {
+      expect(q.text[code], `${q.author.en} ${code}`).toBeTruthy();
+      expect(q.author[code]).toBeTruthy();
+      expect(q.source[code]).toBeTruthy();
+    }
+    for (const a of AFFIRMATIONS) for (const code of LANGUAGE_CODES) expect(a[code], `${a.en} ${code}`).toBeTruthy();
+  });
+  it("stays the same all day and changes the next day", () => {
+    const morning = new Date(2026, 10, 6, 0, 5);
+    const night = new Date(2026, 10, 6, 23, 55);
+    const tomorrow = new Date(2026, 10, 7, 9, 0);
+    expect(localDayNumber(morning)).toBe(localDayNumber(night));
+    expect(dailyPicks(morning)).toEqual(dailyPicks(night));
+    expect(dailyPicks(tomorrow).quote).not.toBe(dailyPicks(morning).quote);
+    expect(dailyPicks(tomorrow).affirmation).not.toBe(dailyPicks(morning).affirmation);
+  });
+});

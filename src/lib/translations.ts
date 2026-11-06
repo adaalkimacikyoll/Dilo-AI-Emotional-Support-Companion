@@ -16,6 +16,8 @@ export interface Strings {
   newChat: string;
   welcomeTitle: string;
   welcomeBody: string;
+  dailyQuote: string;
+  dailyAffirmation: string;
   moodPrompt: string;
   moodHint: string;
   moodClear: string;
@@ -194,6 +196,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "New conversation",
     welcomeTitle: "How are you today?",
     welcomeBody: "Share whatever is on your mind. Dilo listens without judgement and can suggest small things that might help.",
+    dailyQuote: "Quote of the day",
+    dailyAffirmation: "For today",
     moodPrompt: "How are you feeling?",
     moodHint: "Optional. Dilo takes your mood into account when it replies.",
     moodClear: "Clear mood",
@@ -416,6 +420,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "Yeni sohbet",
     welcomeTitle: "Bugün nasılsın?",
     welcomeBody: "Aklından geçen her şeyi paylaşabilirsin. Dilo yargılamadan dinler ve iyi gelebilecek küçük şeyler önerebilir.",
+    dailyQuote: "Günün sözü",
+    dailyAffirmation: "Bugün için",
     moodPrompt: "Nasıl hissediyorsun?",
     moodHint: "İsteğe bağlı. Dilo cevap verirken ruh halini dikkate alır.",
     moodClear: "Ruh halini temizle",
@@ -638,6 +644,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "Neues Gespräch",
     welcomeTitle: "Wie geht es dir heute?",
     welcomeBody: "Erzähl, was dich beschäftigt. Dilo hört ohne Urteil zu und kann kleine Dinge vorschlagen, die helfen könnten.",
+    dailyQuote: "Zitat des Tages",
+    dailyAffirmation: "Für heute",
     moodPrompt: "Wie fühlst du dich?",
     moodHint: "Optional. Dilo berücksichtigt deine Stimmung beim Antworten.",
     moodClear: "Stimmung zurücksetzen",
@@ -860,6 +868,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "Nouvelle conversation",
     welcomeTitle: "Comment allez-vous aujourd'hui ?",
     welcomeBody: "Partagez ce qui vous préoccupe. Dilo écoute sans jugement et peut suggérer de petites choses qui pourraient aider.",
+    dailyQuote: "Citation du jour",
+    dailyAffirmation: "Pour aujourd'hui",
     moodPrompt: "Comment vous sentez-vous ?",
     moodHint: "Facultatif. Dilo tient compte de votre humeur dans ses réponses.",
     moodClear: "Effacer l'humeur",
@@ -1082,6 +1092,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "Nueva conversación",
     welcomeTitle: "¿Cómo estás hoy?",
     welcomeBody: "Comparte lo que tengas en mente. Dilo escucha sin juzgar y puede sugerir pequeñas cosas que podrían ayudarte.",
+    dailyQuote: "Frase del día",
+    dailyAffirmation: "Para hoy",
     moodPrompt: "¿Cómo te sientes?",
     moodHint: "Opcional. Dilo tiene en cuenta tu estado de ánimo al responder.",
     moodClear: "Quitar estado de ánimo",
@@ -1304,6 +1316,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "محادثة جديدة",
     welcomeTitle: "كيف حالك اليوم؟",
     welcomeBody: "شارك ما يدور في ذهنك. ديلو يستمع دون أحكام ويمكنه اقتراح أشياء صغيرة قد تساعدك.",
+    dailyQuote: "اقتباس اليوم",
+    dailyAffirmation: "لهذا اليوم",
     moodPrompt: "كيف تشعر؟",
     moodHint: "اختياري. يأخذ ديلو مزاجك في الاعتبار عند الرد.",
     moodClear: "مسح المزاج",
@@ -1526,6 +1540,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "گفتگوی جدید",
     welcomeTitle: "امروز چطوری؟",
     welcomeBody: "هر چه در ذهنت هست را بگو. دیلو بدون قضاوت گوش می‌دهد و می‌تواند کارهای کوچکی پیشنهاد کند که شاید کمک کنند.",
+    dailyQuote: "جمله‌ی روز",
+    dailyAffirmation: "برای امروز",
     moodPrompt: "چه حسی داری؟",
     moodHint: "اختیاری. دیلو هنگام پاسخ دادن حالت را در نظر می‌گیرد.",
     moodClear: "پاک کردن حال",
@@ -1748,6 +1764,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     newChat: "Νέα συζήτηση",
     welcomeTitle: "Πώς είσαι σήμερα;",
     welcomeBody: "Πες ό,τι έχεις στο μυαλό σου. Ο Dilo ακούει χωρίς να κρίνει και μπορεί να προτείνει μικρά πράγματα που ίσως βοηθήσουν.",
+    dailyQuote: "Η φράση της ημέρας",
+    dailyAffirmation: "Για σήμερα",
     moodPrompt: "Πώς νιώθεις;",
     moodHint: "Προαιρετικό. Ο Dilo λαμβάνει υπόψη τη διάθεσή σου όταν απαντά.",
     moodClear: "Καθαρισμός διάθεσης",

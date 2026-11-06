@@ -21,6 +21,7 @@ import { MoodPicker } from "./components/MoodPicker";
 import { Composer } from "./components/Composer";
 import { CrisisResources } from "./components/CrisisResources";
 import { ChatMessage } from "./components/ChatMessage";
+import { DailyCard } from "./components/DailyCard";
 import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
 import { ModesMenu } from "./components/ModesMenu";
@@ -496,6 +497,10 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
                 <section className="pt-2 sm:pt-12">
                   <h1 className="max-w-xl font-display text-4xl font-bold leading-[1.1] sm:text-5xl">{t.welcomeTitle}</h1>
                   <p className="mt-4 max-w-lg text-base leading-relaxed text-muted">{t.welcomeBody}</p>
+
+                  <div className="mt-8">
+                    <DailyCard t={t} language={language} />
+                  </div>
 
                   <div className="mt-10">
                     <p className="mb-3 text-sm font-medium">{t.moodPrompt}</p>
