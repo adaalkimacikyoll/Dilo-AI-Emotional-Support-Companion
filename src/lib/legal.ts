@@ -53,7 +53,7 @@ Diese Website und ihre Server-Funktion werden bei Vercel Inc. (USA) gehostet; di
 
 Dilo speichert folgende Daten ausschließlich lokal in deinem Browser (Local Storage): dein Konto mit Gesprächen, Tagebucheinträgen, Notizen und Stimmung (verschlüsselt), Einstellungen, deine Einwilligung (mit Zeitpunkt und Version). Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Da deine Inhalte Angaben zu deiner Gesundheit enthalten können, erfolgt ihre Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).
 
-Deine Inhalte (Gespräche, Tagebucheinträge, Notizen und Stimmung) werden in einem Konto gespeichert, das nur auf diesem Gerät existiert. Im Klartext gespeichert werden lediglich der von dir gewählte Kontoname und technische Werte (Salt). Alle Inhalte werden mit AES-256-GCM verschlüsselt; der Schlüssel wird mit PBKDF2 (310.000 Iterationen) aus deinem Passwort abgeleitet und nur während der Sitzung im Arbeitsspeicher gehalten. Dein Passwort wird nicht gespeichert. Es gibt keine Passwort-Wiederherstellung: Ohne das Passwort können die Inhalte weder von dir noch von uns wiederhergestellt werden. Konten werden nicht mit anderen Geräten synchronisiert.
+Deine Inhalte (Gespräche, Tagebucheinträge, Notizen und Stimmung) werden in einem Konto gespeichert, das nur auf diesem Gerät existiert. Im Klartext gespeichert werden lediglich der von dir gewählte Kontoname und technische Werte (Salt). Alle Inhalte werden mit AES-256-GCM und einem zufälligen Datenschlüssel verschlüsselt. Dieser Datenschlüssel wird zweimal verschlüsselt gespeichert: einmal mit einem Schlüssel, der mit PBKDF2 (310.000 Iterationen) aus deinem Passwort abgeleitet wird, und einmal mit einem Schlüssel aus deinem Wiederherstellungscode, der dir bei der Kontoerstellung einmalig angezeigt wird. Der Datenschlüssel wird nur während der Sitzung im Arbeitsspeicher gehalten. Weder dein Passwort noch dein Wiederherstellungscode werden gespeichert. Mit dem Wiederherstellungscode kannst du ein neues Passwort festlegen; ohne Passwort und Wiederherstellungscode können die Inhalte weder von dir noch von uns wiederhergestellt werden. Konten werden nicht mit anderen Geräten synchronisiert.
 
 Gespräche, die du zusätzlich mit einem eigenen Passwort sperrst, werden auf dieselbe Weise ein weiteres Mal verschlüsselt.
 
@@ -121,7 +121,7 @@ Dilo wird ohne Gewähr für eine ständige Verfügbarkeit bereitgestellt. Für d
 
 ## 8. Deine Daten
 
-Alle Inhalte werden nur verschlüsselt in deinem Konto auf deinem Gerät gespeichert. Wir können sie weder einsehen noch wiederherstellen. Beim Löschen der Browserdaten gehen sie verloren; ohne dein Passwort lassen sie sich nicht wiederherstellen. Du bist für die sichere Aufbewahrung deines Passworts verantwortlich. Einzelheiten in der Datenschutzerklärung.
+Alle Inhalte werden nur verschlüsselt in deinem Konto auf deinem Gerät gespeichert. Wir können sie weder einsehen noch wiederherstellen. Beim Löschen der Browserdaten gehen sie verloren; ohne dein Passwort oder deinen Wiederherstellungscode lassen sie sich nicht wiederherstellen. Du bist für die sichere Aufbewahrung von Passwort und Wiederherstellungscode verantwortlich. Einzelheiten in der Datenschutzerklärung.
 
 ## 9. Haftung
 
@@ -179,7 +179,7 @@ This website and its server function are hosted by Vercel Inc. (USA); the server
 
 Dilo stores the following only in your browser (Local Storage): your account with conversations, journal entries, notes and mood (encrypted), settings, your consent (with time and version). This storage is strictly necessary for the service you request (§ 25(2) no. 2 TDDDG). Because your content may include information about your health, it is processed on the basis of your explicit consent (Art. 9(2)(a) GDPR).
 
-Your content (conversations, journal entries, notes and mood) is stored in an account that exists only on this device. Only the account name you choose and technical values (a salt) are stored in plain text. All content is encrypted with AES-256-GCM using a key derived from your password with PBKDF2 (310,000 iterations), which is kept in memory only for the session. Your password is not stored. There is no password recovery: without the password, neither you nor we can restore the content. Accounts are not synchronised with other devices.
+Your content (conversations, journal entries, notes and mood) is stored in an account that exists only on this device. Only the account name you choose and technical values (a salt) are stored in plain text. All content is encrypted with AES-256-GCM using a random data key. That data key is stored encrypted twice: once with a key derived from your password with PBKDF2 (310,000 iterations), and once with a key derived from your recovery code, which is shown to you once when you create the account. The data key is kept in memory only for the session. Neither your password nor your recovery code is stored. With the recovery code you can set a new password; without both the password and the recovery code, neither you nor we can restore the content. Accounts are not synchronised with other devices.
 
 Conversations you additionally lock with their own password are encrypted a second time in the same way.
 
@@ -247,7 +247,7 @@ Dilo is provided without any guarantee of continuous availability. Replies requi
 
 ## 8. Your data
 
-All content is stored only, encrypted, in your account on your device. We can neither view nor restore it. It is lost when you clear your browser data and cannot be recovered without your password. You are responsible for keeping your password safe. See the privacy policy for details.
+All content is stored only, encrypted, in your account on your device. We can neither view nor restore it. It is lost when you clear your browser data and cannot be recovered without your password or recovery code. You are responsible for keeping your password and recovery code safe. See the privacy policy for details.
 
 ## 9. Liability
 

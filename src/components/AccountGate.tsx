@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { LockKeyhole } from "lucide-react";
-import { createAccount, listAccounts, NameTakenError, signIn, WrongPasswordError, type Session } from "../lib/accounts";
+import { createAccount, listAccounts, NameTakenError, resetPassword, signIn, WrongPasswordError, type Session } from "../lib/accounts";
 import { LANGUAGES } from "../lib/api";
 import { isStrongPassword } from "../lib/lock";
 import { PasswordRules } from "./PasswordRules";
@@ -8,6 +8,9 @@ import type { LegalPage } from "../lib/legal";
 import type { LanguageCode, Strings } from "../lib/translations";
 import { LegalLinks } from "./LegalDialog";
 import { Logo } from "./Logo";
+import { RecoveryCodeView, type RecoveryReason } from "./RecoveryCodeView";
+
+type Mode = "create" | "signin" | "reset";
 
 interface Props {
   t: Strings;
@@ -18,35 +21,55 @@ interface Props {
   onOpenLegal: (page: LegalPage) => void;
 }
 
-/** Shown after consent: create a device account or sign in to one. */
+/** Shown after consent: create a device account, sign in, or set a new password with the recovery code. */
 export function AccountGate({ t, language, dir, onLanguageChange, onSession, onOpenLegal }: Props) {
-  const [mode, setMode] = useState<"create" | "signin">(() => (listAccounts().length > 0 ? "signin" : "create"));
+  const [mode, setMode] = useState<Mode>(() => (listAccounts().length > 0 ? "signin" : "create"));
+  const [recovery, setRecovery] = useState("");
+  // A session that comes with a new recovery code is held back until the user has saved the code.
+  const [pending, setPending] = useState<{ session: Session; reason: RecoveryReason } | null>(null);
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const [repeat, setRepeat] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  const switchMode = (next: "create" | "signin") => {
+  const switchMode = (next: Mode) => {
     setMode(next);
     setError(null);
     setPassword("");
     setRepeat("");
+    setRecovery("");
   };
+
+  const newPassword = mode !== "signin";
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return setError(t.nameRequired);
-    if (mode === "create") {
+    if (mode === "reset" && !recovery.trim()) return setError(t.wrongRecovery);
+    if (newPassword) {
       if (!isStrongPassword(password)) return setError(t.passwordTooShort);
       if (password !== repeat) return setError(t.passwordMismatch);
     }
     setBusy(true);
     setError(null);
     try {
-      onSession(mode === "create" ? await createAccount(name, password) : await signIn(name, password));
+      const session =
+        mode === "create" ? await createAccount(name, password) : mode === "reset" ? await resetPassword(name, recovery, password) : await signIn(name, password);
+      if (session.recoveryCode) {
+        setPending({ session, reason: mode === "create" ? "created" : mode === "reset" ? "reset" : "upgraded" });
+        setBusy(false);
+      } else onSession(session);
     } catch (err) {
-      setError(err instanceof NameTakenError ? t.nameTaken : err instanceof WrongPasswordError ? t.wrongCredentials : t.genericError);
+      setError(
+        err instanceof NameTakenError
+          ? t.nameTaken
+          : err instanceof WrongPasswordError
+            ? mode === "reset"
+              ? t.wrongRecovery
+              : t.wrongCredentials
+            : t.genericError,
+      );
       setBusy(false);
     }
   };
@@ -55,7 +78,7 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
 
   return (
     <div dir={dir} className="flex min-h-dvh items-center justify-center bg-paper px-4 py-8 text-ink">
-      <div role="dialog" aria-modal="true" aria-labelledby="account-title" className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-xl sm:p-8">
+      <div role="dialog" aria-modal="true" aria-labelledby={pending ? "recovery-title" : "account-title"} className="w-full max-w-md rounded-2xl border border-line bg-surface p-6 shadow-xl sm:p-8">
         <div className="mb-6 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <Logo className="h-9 w-9" />
@@ -78,13 +101,22 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
           </select>
         </div>
 
+        {pending ? (
+          <RecoveryCodeView
+            t={t}
+            code={pending.session.recoveryCode!}
+            accountName={pending.session.account.name}
+            reason={pending.reason}
+            onDone={() => onSession({ ...pending.session, recoveryCode: undefined })}
+          />
+        ) : (
         <form onSubmit={submit} className="space-y-4" noValidate>
           <div>
             <h1 id="account-title" className="flex items-center gap-2 font-display text-2xl font-bold">
               <LockKeyhole className="h-5 w-5 text-moss" aria-hidden="true" />
-              {mode === "create" ? t.accountCreateTitle : t.accountSignInTitle}
+              {mode === "create" ? t.accountCreateTitle : mode === "reset" ? t.resetTitle : t.accountSignInTitle}
             </h1>
-            <p className="mt-2 text-sm leading-relaxed text-muted">{t.accountIntro}</p>
+            <p className="mt-2 text-sm leading-relaxed text-muted">{mode === "reset" ? t.resetIntro : t.accountIntro}</p>
           </div>
 
           <div>
@@ -94,23 +126,42 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
             <input id="account-name" autoFocus autoComplete="username" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} className={input} />
           </div>
 
+          {mode === "reset" && (
+            <div>
+              <label htmlFor="account-recovery" className="mb-1.5 block text-sm font-medium">
+                {t.recoveryCodeLabel}
+              </label>
+              <input
+                id="account-recovery"
+                dir="ltr"
+                autoComplete="off"
+                autoCapitalize="characters"
+                spellCheck={false}
+                value={recovery}
+                onChange={(e) => setRecovery(e.target.value)}
+                placeholder="XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"
+                className={`${input} font-mono tracking-wider`}
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="account-password" className="mb-1.5 block text-sm font-medium">
-              {t.password}
+              {mode === "reset" ? t.newPassword : t.password}
             </label>
             <input
               id="account-password"
               type="password"
-              autoComplete={mode === "create" ? "new-password" : "current-password"}
+              autoComplete={newPassword ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              aria-describedby={mode === "create" ? "account-password-rules" : undefined}
+              aria-describedby={newPassword ? "account-password-rules" : undefined}
               className={input}
             />
-            {mode === "create" && <PasswordRules id="account-password-rules" t={t} password={password} />}
+            {newPassword && <PasswordRules id="account-password-rules" t={t} password={password} />}
           </div>
 
-          {mode === "create" && (
+          {newPassword && (
             <div>
               <label htmlFor="account-repeat" className="mb-1.5 block text-sm font-medium">
                 {t.repeatPassword}
@@ -124,9 +175,11 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
               <p>{t.accountWarning}</p>
               <p className="text-xs">{t.accountDeviceOnly}</p>
             </div>
-          ) : (
-            <p className="text-xs leading-relaxed text-muted">{t.forgotPassword}</p>
-          )}
+          ) : mode === "signin" ? (
+            <button type="button" onClick={() => switchMode("reset")} className="text-sm font-medium text-moss underline underline-offset-2 hover:text-ink">
+              {t.forgotPasswordLink}
+            </button>
+          ) : null}
 
           {error && (
             <p role="alert" className="text-sm text-alert">
@@ -135,17 +188,18 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
           )}
 
           <button type="submit" disabled={busy} className="w-full rounded-lg bg-moss px-5 py-2.5 font-semibold text-on-accent transition-opacity disabled:opacity-50">
-            {busy ? t.working : mode === "create" ? t.createAccount : t.signIn}
+            {busy ? t.working : mode === "create" ? t.createAccount : mode === "reset" ? t.resetSubmit : t.signIn}
           </button>
 
           <button
             type="button"
-            onClick={() => switchMode(mode === "create" ? "signin" : "create")}
+            onClick={() => switchMode(mode === "signin" ? "create" : "signin")}
             className="block w-full text-center text-sm text-muted underline underline-offset-2 hover:text-ink"
           >
-            {mode === "create" ? t.haveAccount : t.newAccount}
+            {mode === "create" ? t.haveAccount : mode === "reset" ? t.backToSignIn : t.newAccount}
           </button>
         </form>
+        )}
 
         <LegalLinks t={t} onOpen={onOpenLegal} className="mt-6 border-t border-line pt-4" />
       </div>

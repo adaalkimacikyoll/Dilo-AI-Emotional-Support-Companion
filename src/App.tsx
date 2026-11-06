@@ -13,7 +13,7 @@ import type { LegalPage } from "./lib/legal";
 import { TRANSLATIONS, type LanguageCode, type Strings } from "./lib/translations";
 import { playReplyChime } from "./lib/sound";
 import { newId, titleFrom, type Conversation, type StoredMessage } from "./lib/journal";
-import { deleteAccount, saveVault, type Session, type Vault } from "./lib/accounts";
+import { deleteAccount, newRecoveryCode, saveVault, type Session, type Vault } from "./lib/accounts";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { Logo } from "./components/Logo";
 import { Dialog } from "./components/Dialog";
@@ -25,6 +25,7 @@ import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
 import { ModesMenu } from "./components/ModesMenu";
 import { AccountGate } from "./components/AccountGate";
+import { RecoveryCodeView } from "./components/RecoveryCodeView";
 import { ConsentGate } from "./components/ConsentGate";
 import { LegalDialog, LegalLinks } from "./components/LegalDialog";
 
@@ -179,6 +180,18 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
   const signOut = async () => {
     await saveVault(session, vaultRef.current);
     onSignOut();
+  };
+
+  const [freshRecoveryCode, setFreshRecoveryCode] = useState<string | null>(null);
+  const createRecoveryCode = async () => {
+    if (!confirm(t.newRecoveryConfirm)) return;
+    try {
+      const { recoveryCode } = await newRecoveryCode(session);
+      setPanelOpen(false);
+      setFreshRecoveryCode(recoveryCode);
+    } catch {
+      alert(t.genericError);
+    }
   };
 
   const removeAccount = () => {
@@ -601,11 +614,18 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
           accountName={session.account.name}
           onSignOut={signOut}
           onDeleteAccount={removeAccount}
+          onNewRecoveryCode={createRecoveryCode}
           onOpenLegal={(page) => {
             setPanelOpen(false);
             onOpenLegal(page);
           }}
         />
+      </Dialog>
+
+      <Dialog open={freshRecoveryCode !== null} onClose={() => setFreshRecoveryCode(null)} title={t.recoveryTitle} closeLabel={t.close} dir={dir}>
+        {freshRecoveryCode && (
+          <RecoveryCodeView t={t} code={freshRecoveryCode} accountName={session.account.name} reason="new" hideTitle onDone={() => setFreshRecoveryCode(null)} />
+        )}
       </Dialog>
 
       <Dialog open={crisisOpen} onClose={() => setCrisisOpen(false)} title={t.crisisTitle} closeLabel={t.close} dir={dir}>

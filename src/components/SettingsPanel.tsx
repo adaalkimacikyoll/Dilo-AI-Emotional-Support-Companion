@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound } from "lucide-react";
+import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound, KeyRound } from "lucide-react";
 import { cn } from "../lib/utils";
 import { LANGUAGES } from "../lib/api";
 import type { LegalPage } from "../lib/legal";
@@ -27,6 +27,7 @@ interface Props {
   accountName: string;
   onSignOut: () => void;
   onDeleteAccount: () => void;
+  onNewRecoveryCode: () => void;
   onOpenLegal: (page: LegalPage) => void;
 }
 
@@ -103,6 +104,10 @@ export function SettingsPanel(p: Props) {
           <button type="button" onClick={p.onSignOut} className="flex items-center gap-2 text-sm font-medium text-ink hover:underline">
             <LogOut className="h-4 w-4" aria-hidden="true" />
             {t.signOut}
+          </button>
+          <button type="button" onClick={p.onNewRecoveryCode} className="flex items-center gap-2 text-sm font-medium text-ink hover:underline">
+            <KeyRound className="h-4 w-4" aria-hidden="true" />
+            {t.newRecoveryButton}
           </button>
           <button type="button" onClick={p.onDeleteAccount} className="flex items-center gap-2 text-sm font-medium text-alert hover:underline">
             <Trash2 className="h-4 w-4" aria-hidden="true" />
