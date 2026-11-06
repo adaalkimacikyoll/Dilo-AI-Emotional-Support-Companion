@@ -12,6 +12,8 @@ import { RecoveryCodeView, type RecoveryReason } from "./RecoveryCodeView";
 
 type Mode = "create" | "signin" | "reset";
 
+const isEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value.trim());
+
 interface Props {
   t: Strings;
   language: LanguageCode;
@@ -46,6 +48,9 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return setError(t.nameRequired);
+    // New accounts use an email address. Sign-in and reset accept any existing account name,
+    // so accounts created before emails were used keep working.
+    if (mode === "create" && !isEmail(name)) return setError(t.invalidEmail);
     if (mode === "reset" && !recovery.trim()) return setError(t.wrongRecovery);
     if (newPassword) {
       if (!isStrongPassword(password)) return setError(t.passwordTooShort);
@@ -55,7 +60,7 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
     setError(null);
     try {
       const session =
-        mode === "create" ? await createAccount(name, password) : mode === "reset" ? await resetPassword(name, recovery, password) : await signIn(name, password);
+        mode === "create" ? await createAccount(name.trim().toLowerCase(), password) : mode === "reset" ? await resetPassword(name, recovery, password) : await signIn(name, password);
       if (session.recoveryCode) {
         setPending({ session, reason: mode === "create" ? "created" : mode === "reset" ? "reset" : "upgraded" });
         setBusy(false);
@@ -123,7 +128,21 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
             <label htmlFor="account-name" className="mb-1.5 block text-sm font-medium">
               {t.accountName}
             </label>
-            <input id="account-name" autoFocus autoComplete="username" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} className={input} />
+            <input
+              id="account-name"
+              type="email"
+              inputMode="email"
+              dir="ltr"
+              autoFocus
+              autoComplete="username"
+              autoCapitalize="none"
+              spellCheck={false}
+              maxLength={254}
+              placeholder="name@example.com"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className={input}
+            />
           </div>
 
           {mode === "reset" && (
