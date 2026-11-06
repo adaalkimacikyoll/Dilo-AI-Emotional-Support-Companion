@@ -158,6 +158,7 @@ export function sseToText(
               outputChars += delta.length;
               controller.enqueue(encoder.encode(delta));
             }
+            if (parsed?.error) console.error("AI provider stream error", JSON.stringify(parsed.error).slice(0, 300));
             const total = parsed?.usage?.total_tokens;
             if (typeof total === "number") usageTokens = total;
           } catch {
@@ -166,6 +167,7 @@ export function sseToText(
         }
       },
       async flush() {
+        if (outputChars === 0) console.error("AI provider returned an empty reply");
         try {
           await onDone?.({ usageTokens, outputChars });
         } catch {
