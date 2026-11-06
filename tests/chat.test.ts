@@ -433,3 +433,32 @@ describe("server files load on Vercel", () => {
     for (const path of relative) expect(path).toMatch(/\.js$/);
   });
 });
+
+
+describe("reasoning is turned off", () => {
+  const post = () =>
+    new Request("http://localhost/api/chat", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "6.6.6.6" }, body: JSON.stringify({ history: [{ role: "user", text: "Hi" }], language: "en", mode: "friendly", support: "tips", mood: null }) });
+  beforeEach(() => resetRateLimits());
+
+  it("asks the model not to think", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(sse(delta("Hey")), { status: 200 }));
+    await (await handleRequest(post(), { AI_API_KEY: "k", AI_TOKEN_BUDGET: "off" }, fetchImpl)).text();
+    expect(JSON.parse(String(fetchImpl.mock.calls[0][1]?.body)).reasoning_effort).toBe("none");
+  });
+
+  it("retries without the setting if the model rejects it", async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response("unsupported", { status: 400 }))
+      .mockResolvedValueOnce(new Response(sse(delta("Hey")), { status: 200 }));
+    const res = await handleRequest(post(), { AI_API_KEY: "k", AI_TOKEN_BUDGET: "off" }, fetchImpl);
+    expect(await res.text()).toBe("Hey");
+    expect(JSON.parse(String(fetchImpl.mock.calls[1][1]?.body)).reasoning_effort).toBeUndefined();
+  });
+
+  it("never shows hidden reasoning to the user", async () => {
+    const thinking = JSON.stringify({ choices: [{ delta: { reasoning_content: "secret plan" } }] });
+    const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(sse(thinking, delta("Hey")), { status: 200 }));
+    expect(await (await handleRequest(post(), { AI_API_KEY: "k", AI_TOKEN_BUDGET: "off" }, fetchImpl)).text()).toBe("Hey");
+  });
+});

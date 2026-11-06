@@ -140,6 +140,7 @@ export function sseToText(
   let buffer = "";
   let usageTokens: number | null = null;
   let outputChars = 0;
+  let reasoningChars = 0;
   return body.pipeThrough(
     new TransformStream<Uint8Array, Uint8Array>({
       transform(chunk, controller) {
@@ -153,7 +154,10 @@ export function sseToText(
           if (!data || data === "[DONE]") continue;
           try {
             const parsed = JSON.parse(data);
-            const delta = parsed?.choices?.[0]?.delta?.content;
+            const d = parsed?.choices?.[0]?.delta;
+            const thinking = d?.reasoning_content ?? d?.reasoning;
+            if (typeof thinking === "string") reasoningChars += thinking.length;
+            const delta = d?.content;
             if (typeof delta === "string" && delta) {
               outputChars += delta.length;
               controller.enqueue(encoder.encode(delta));
@@ -167,7 +171,7 @@ export function sseToText(
         }
       },
       async flush() {
-        if (outputChars === 0) console.error("AI provider returned an empty reply");
+        if (outputChars === 0) console.error(`AI provider returned an empty reply (hidden reasoning: ${reasoningChars} chars)`);
         try {
           await onDone?.({ usageTokens, outputChars });
         } catch {
@@ -254,9 +258,8 @@ export async function handleRequest(
     if (counter && reserved) await counter.add(-reserved).catch(() => {});
   };
 
-  let upstream: Response;
-  try {
-    upstream = await fetchImpl(`${(env.AI_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "")}/chat/completions`, {
+  const callModel = (withReasoningOff: boolean) =>
+    fetchImpl(`${(env.AI_BASE_URL || DEFAULT_BASE_URL).replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${env.AI_API_KEY}` },
       body: JSON.stringify({
@@ -264,12 +267,21 @@ export async function handleRequest(
         messages,
         stream: true,
         stream_options: { include_usage: true },
+        // Chat replies don't need hidden "thinking": it slows replies down, costs tokens and can use up
+        // the whole token limit before any visible answer is written.
+        ...(withReasoningOff ? { reasoning_effort: "none" } : {}),
         // Friend replies are looser and more playful; psychological support stays focused.
         temperature: chat.mode === "psychologist" ? 0.6 : 0.85,
         top_p: 0.95,
         max_tokens: LIMITS.maxReplyTokens,
       }),
     });
+
+  let upstream: Response;
+  try {
+    upstream = await callModel(true);
+    // Some models don't accept reasoning_effort; ask again without it.
+    if (upstream.status === 400) upstream = await callModel(false);
   } catch {
     await refund();
     return fail("network");
