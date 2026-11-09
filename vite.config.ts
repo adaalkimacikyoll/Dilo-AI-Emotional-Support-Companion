@@ -8,9 +8,31 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
  * so the AI key stays on the server in both environments.
  */
 function devApi(env: Record<string, string>): Plugin {
+  let devStore: unknown = null; // one in-memory auth store for the whole dev session
   return {
     name: 'dilo-dev-api',
     configureServer(server) {
+      server.middlewares.use('/api/auth', async (req, res) => {
+        const { handleAuth, memoryStore } = await server.ssrLoadModule('/server/auth.ts');
+        devStore ??= env.KV_REST_API_URL ? null : memoryStore();
+        const chunks: Buffer[] = [];
+        for await (const chunk of req) chunks.push(chunk as Buffer);
+        const request = new Request('http://localhost/api/auth', {
+          method: req.method,
+          headers: { 'content-type': 'application/json' },
+          body: req.method === 'POST' ? Buffer.concat(chunks) : undefined,
+        });
+        const response: Response = await handleAuth(
+          request,
+          { KV_REST_API_URL: env.KV_REST_API_URL, KV_REST_API_TOKEN: env.KV_REST_API_TOKEN, BREVO_API_KEY: env.BREVO_API_KEY, MAIL_FROM: env.MAIL_FROM, BREVO_BASE_URL: env.BREVO_BASE_URL },
+          fetch,
+          { ...(devStore ? { store: devStore } : {}), rateLimit: false }, // local development only
+        );
+        res.statusCode = response.status;
+        response.headers.forEach((value, key) => res.setHeader(key, value));
+        res.end(await response.text());
+      });
+
       server.middlewares.use('/api/chat', async (req, res) => {
         const { handleRequest } = await server.ssrLoadModule('/server/chat.ts');
         const chunks: Buffer[] = [];

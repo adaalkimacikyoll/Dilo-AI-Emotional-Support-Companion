@@ -13,7 +13,8 @@ import type { LegalPage } from "./lib/legal";
 import { TRANSLATIONS, type LanguageCode, type Strings } from "./lib/translations";
 import { playReplyChime } from "./lib/sound";
 import { newId, titleFrom, type Conversation, type StoredMessage } from "./lib/journal";
-import { deleteAccount, newRecoveryCode, saveVault, type Session, type Vault } from "./lib/accounts";
+import { deleteAccount, exportDataKey, saveVault, type Session, type Vault } from "./lib/accounts";
+import { deleteResetKey } from "./lib/auth";
 import { usePersistentState } from "./hooks/usePersistentState";
 import { Logo } from "./components/Logo";
 import { Dialog } from "./components/Dialog";
@@ -26,7 +27,7 @@ import { JournalView } from "./components/JournalView";
 import { SettingsPanel, type TextSize, type Theme } from "./components/SettingsPanel";
 import { ModesMenu } from "./components/ModesMenu";
 import { AccountGate } from "./components/AccountGate";
-import { RecoveryCodeView } from "./components/RecoveryCodeView";
+import { EmailResetSetup } from "./components/EmailResetSetup";
 import { ConsentGate } from "./components/ConsentGate";
 import { LegalDialog, LegalLinks } from "./components/LegalDialog";
 
@@ -183,20 +184,22 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
     onSignOut();
   };
 
-  const [freshRecoveryCode, setFreshRecoveryCode] = useState<string | null>(null);
-  const createRecoveryCode = async () => {
-    if (!confirm(t.newRecoveryConfirm)) return;
+  const [emailSetupOpen, setEmailSetupOpen] = useState(false);
+  const [emailReset, setEmailResetState] = useState(!!session.account.emailReset);
+
+  /** Removes the server's copy of this account's key (best effort; it is useless without the device anyway). */
+  const forgetResetKey = async () => {
+    if (!session.account.emailReset && !emailReset) return;
     try {
-      const { recoveryCode } = await newRecoveryCode(session);
-      setPanelOpen(false);
-      setFreshRecoveryCode(recoveryCode);
+      await deleteResetKey(session.account.name, await exportDataKey(session.key));
     } catch {
-      alert(t.genericError);
+      /* offline: nothing else to do */
     }
   };
 
-  const removeAccount = () => {
+  const removeAccount = async () => {
     if (!confirm(t.deleteAccountConfirm.replace("{name}", session.account.name))) return;
+    await forgetResetKey();
     deleteAccount(session.account.id);
     onSignOut();
   };
@@ -244,6 +247,7 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
 
   const deleteAllData = async () => {
     if (!confirm(t.deleteAllConfirm)) return;
+    await forgetResetKey();
     try {
       Object.keys(localStorage)
         .filter((k) => k.startsWith("dilo."))
@@ -619,7 +623,11 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
           accountName={session.account.name}
           onSignOut={signOut}
           onDeleteAccount={removeAccount}
-          onNewRecoveryCode={createRecoveryCode}
+          emailReset={emailReset}
+          onEmailReset={() => {
+            setPanelOpen(false);
+            setEmailSetupOpen(true);
+          }}
           onOpenLegal={(page) => {
             setPanelOpen(false);
             onOpenLegal(page);
@@ -627,9 +635,17 @@ function DiloApp({ session, onSignOut, language, setLanguage, theme, setTheme, o
         />
       </Dialog>
 
-      <Dialog open={freshRecoveryCode !== null} onClose={() => setFreshRecoveryCode(null)} title={t.recoveryTitle} closeLabel={t.close} dir={dir}>
-        {freshRecoveryCode && (
-          <RecoveryCodeView t={t} code={freshRecoveryCode} accountName={session.account.name} reason="new" hideTitle onDone={() => setFreshRecoveryCode(null)} />
+      <Dialog open={emailSetupOpen} onClose={() => setEmailSetupOpen(false)} title={t.emailResetLabel} closeLabel={t.close} dir={dir}>
+        {emailSetupOpen && (
+          <EmailResetSetup
+            t={t}
+            language={language}
+            session={session}
+            onDone={() => {
+              setEmailResetState(true);
+              setEmailSetupOpen(false);
+            }}
+          />
         )}
       </Dialog>
 

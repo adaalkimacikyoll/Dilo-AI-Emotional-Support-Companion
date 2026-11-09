@@ -1,9 +1,9 @@
 /**
  * Device accounts. Each account's conversations, journal, notes and mood live in one encrypted
- * "vault" in this browser. The vault is sealed with a random data key (AES-GCM). That data key is
- * stored twice, each copy sealed with a key derived (PBKDF2) from a secret only the user has:
- * the password, and a recovery code shown once at sign-up. Either one can open the vault, so a
- * forgotten password can be replaced with the recovery code. Nothing is sent to a server.
+ * "vault" in this browser. The vault is sealed with a random data key (AES-GCM), and that data key
+ * is stored sealed under a key derived (PBKDF2) from the password. For password reset by email, a
+ * copy of the data key is also kept, encrypted, on Dilo's server (see server/auth.ts); the vault
+ * itself never leaves the device.
  */
 import { isMoodId } from "./moods";
 import { isConversations, isEntries, isNotes, migrateLegacyConversation, newId, type Conversation, type JournalEntry, type Note } from "./journal";
@@ -17,12 +17,12 @@ export interface AccountRecord {
   /** A known value sealed with the password key, used to check the password. */
   check: SealedPayload;
   createdAt: number;
-  /** The vault's data key, sealed once with the password key and once with the recovery-code key. Missing on accounts created before recovery codes. */
+  /** The vault's data key, sealed with the password key. Missing on accounts from before data keys. */
   keys?: {
     password: SealedPayload;
-    recovery: SealedPayload;
-    recoverySalt: string;
   };
+  /** True once a copy of the data key is saved for password reset by email. */
+  emailReset?: boolean;
 }
 
 export interface Vault {
@@ -38,8 +38,6 @@ export interface Session {
   /** The vault's data key (kept in memory only). */
   key: CryptoKey;
   vault: Vault;
-  /** A newly created recovery code that the user must see and save once. */
-  recoveryCode?: string;
 }
 
 export class NameTakenError extends Error {}
@@ -73,7 +71,7 @@ export function listAccounts(): AccountRecord[] {
 
 const saveAccounts = (accounts: AccountRecord[]) => localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
 
-const findAccount = (name: string) => listAccounts().find((a) => normalize(a.name) === normalize(name));
+export const findAccount = (name: string) => listAccounts().find((a) => normalize(a.name) === normalize(name));
 
 /** Keeps only valid parts of a decrypted or legacy vault, so corrupted data never crashes the app. */
 export function sanitizeVault(value: unknown): Vault {
@@ -103,19 +101,7 @@ function readLegacyVault(): Vault | null {
 
 export const hasLegacyData = () => readLegacyVault() !== null;
 
-// ---------- data keys and recovery codes ----------
-
-const RECOVERY_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O or 1/I to avoid mix-ups
-
-/** 25 random characters (125 bits) in five groups, e.g. "K7QPM-2XWRT-...". */
-export function generateRecoveryCode(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(25));
-  const chars = [...bytes].map((b) => RECOVERY_ALPHABET[b % 32]);
-  return [0, 5, 10, 15, 20].map((i) => chars.slice(i, i + 5).join("")).join("-");
-}
-
-/** Ignores spaces, dashes and letter case, so the code can be typed however it was written down. */
-export const normalizeRecoveryCode = (code: string) => code.toUpperCase().replace(/[^A-Z0-9]/g, "");
+// ---------- data keys ----------
 
 const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const fromBase64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
@@ -123,15 +109,9 @@ const fromBase64 = (b64: string) => Uint8Array.from(atob(b64), (c) => c.charCode
 const importDataKey = (raw: Uint8Array) =>
   crypto.subtle.importKey("raw", raw as BufferSource, { name: "AES-GCM" }, true, ["encrypt", "decrypt"]);
 
-async function exportDataKey(key: CryptoKey) {
+/** The data key as base64, for saving the email-reset copy. */
+export async function exportDataKey(key: CryptoKey) {
   return toBase64(new Uint8Array(await crypto.subtle.exportKey("raw", key)));
-}
-
-/** A new recovery code with the data key sealed under it. */
-async function sealForRecovery(dataKeyB64: string) {
-  const recoveryCode = generateRecoveryCode();
-  const { key, salt } = await deriveKeyFromPassword(normalizeRecoveryCode(recoveryCode));
-  return { recoveryCode, recovery: await sealWithKey(key, dataKeyB64), recoverySalt: salt };
 }
 
 /** Seals the data key under a (new) password; returns the fields to store on the account. */
@@ -141,6 +121,14 @@ async function sealForPassword(dataKeyB64: string, password: string) {
 }
 
 const replaceAccount = (account: AccountRecord) => saveAccounts(listAccounts().map((a) => (a.id === account.id ? account : a)));
+
+export function setEmailReset(accountId: string, on: boolean): AccountRecord | null {
+  const current = listAccounts().find((a) => a.id === accountId);
+  if (!current) return null;
+  const updated = { ...current, emailReset: on };
+  replaceAccount(updated);
+  return updated;
+}
 
 export async function saveVault(session: Pick<Session, "account" | "key">, vault: Vault) {
   const sealed = await sealWithKey(session.key, vault);
@@ -154,17 +142,8 @@ export async function createAccount(name: string, password: string): Promise<Ses
   const trimmed = name.trim();
   if (findAccount(trimmed)) throw new NameTakenError();
   const dataKey = await importDataKey(crypto.getRandomValues(new Uint8Array(32)));
-  const dataKeyB64 = await exportDataKey(dataKey);
-  const pw = await sealForPassword(dataKeyB64, password);
-  const rc = await sealForRecovery(dataKeyB64);
-  const account: AccountRecord = {
-    id: newId(),
-    name: trimmed,
-    salt: pw.salt,
-    check: pw.check,
-    createdAt: Date.now(),
-    keys: { password: pw.password, recovery: rc.recovery, recoverySalt: rc.recoverySalt },
-  };
+  const pw = await sealForPassword(await exportDataKey(dataKey), password);
+  const account: AccountRecord = { id: newId(), name: trimmed, salt: pw.salt, check: pw.check, createdAt: Date.now(), keys: { password: pw.password } };
 
   // The first account on a device takes over anything written before accounts existed.
   const legacy = listAccounts().length === 0 ? readLegacyVault() : null;
@@ -173,7 +152,7 @@ export async function createAccount(name: string, password: string): Promise<Ses
   saveAccounts([...listAccounts(), account]);
   await saveVault({ account, key: dataKey }, vault);
   if (legacy) LEGACY_KEYS.forEach((k) => localStorage.removeItem(k));
-  return { account, key: dataKey, vault, recoveryCode: rc.recoveryCode };
+  return { account, key: dataKey, vault };
 }
 
 /** Throws WrongPasswordError for an unknown name or a wrong password (deliberately the same error). */
@@ -194,59 +173,31 @@ export async function signIn(name: string, password: string): Promise<Session> {
     return { account, key: dataKey, vault };
   }
 
-  // Accounts from before recovery codes: the vault was sealed with the password key itself.
-  // Move it to a data key and create a recovery code, which the user is shown once.
+  // Accounts from before data keys: the vault was sealed with the password key itself.
+  // Move it to a data key, so password reset by email can be turned on for it.
   const vault = sealed ? sanitizeVault(await openWithKey(passwordKey, sealed)) : emptyVault();
   const dataKey = await importDataKey(crypto.getRandomValues(new Uint8Array(32)));
-  const dataKeyB64 = await exportDataKey(dataKey);
-  const rc = await sealForRecovery(dataKeyB64);
-  const upgraded: AccountRecord = {
-    ...account,
-    keys: { password: await sealWithKey(passwordKey, dataKeyB64), recovery: rc.recovery, recoverySalt: rc.recoverySalt },
-  };
+  const upgraded: AccountRecord = { ...account, keys: { password: await sealWithKey(passwordKey, await exportDataKey(dataKey)) } };
   // Write the re-sealed vault before switching the account over, so a crash in between never locks the user out.
   localStorage.setItem(vaultKey(account.id), JSON.stringify(await sealWithKey(dataKey, vault)));
   replaceAccount(upgraded);
-  return { account: upgraded, key: dataKey, vault, recoveryCode: rc.recoveryCode };
+  return { account: upgraded, key: dataKey, vault };
 }
 
 /**
- * Sets a new password using the recovery code. All data is kept. The used recovery code is replaced
- * by a new one, returned in the session for the user to save. Throws WrongPasswordError for an unknown
- * name or a wrong code.
+ * Sets a new password with the data key returned after an emailed code was confirmed. All data is kept.
+ * Throws WrongPasswordError if there is no such account on this device or the key doesn't open its vault.
  */
-export async function resetPassword(name: string, recoveryCode: string, newPassword: string): Promise<Session> {
+export async function resetPasswordWithKey(name: string, dataKeyB64: string, newPassword: string): Promise<Session> {
   const account = findAccount(name);
-  if (!account?.keys) {
-    await deriveKeyFromPassword(normalizeRecoveryCode(recoveryCode));
-    throw new WrongPasswordError();
-  }
-  const { key: recoveryKey } = await deriveKeyFromPassword(normalizeRecoveryCode(recoveryCode), account.keys.recoverySalt);
-  const dataKeyB64 = await openWithKey<string>(recoveryKey, account.keys.recovery);
+  if (!account?.keys) throw new WrongPasswordError();
   const dataKey = await importDataKey(fromBase64(dataKeyB64));
   const sealed = readJSON(vaultKey(account.id)) as SealedPayload | null;
   const vault = sealed ? sanitizeVault(await openWithKey(dataKey, sealed)) : emptyVault();
-
   const pw = await sealForPassword(dataKeyB64, newPassword);
-  const rc = await sealForRecovery(dataKeyB64);
-  const updated: AccountRecord = {
-    ...account,
-    salt: pw.salt,
-    check: pw.check,
-    keys: { password: pw.password, recovery: rc.recovery, recoverySalt: rc.recoverySalt },
-  };
+  const updated: AccountRecord = { ...account, salt: pw.salt, check: pw.check, keys: { password: pw.password }, emailReset: true };
   replaceAccount(updated);
-  return { account: updated, key: dataKey, vault, recoveryCode: rc.recoveryCode };
-}
-
-/** Replaces the recovery code of a signed-in account (the old one stops working). */
-export async function newRecoveryCode(session: Pick<Session, "account" | "key">): Promise<{ account: AccountRecord; recoveryCode: string }> {
-  const current = listAccounts().find((a) => a.id === session.account.id);
-  if (!current?.keys) throw new Error("Account has no data key");
-  const rc = await sealForRecovery(await exportDataKey(session.key));
-  const updated: AccountRecord = { ...current, keys: { ...current.keys, recovery: rc.recovery, recoverySalt: rc.recoverySalt } };
-  replaceAccount(updated);
-  return { account: updated, recoveryCode: rc.recoveryCode };
+  return { account: updated, key: dataKey, vault };
 }
 
 /** Removes an account and its vault from this device. */

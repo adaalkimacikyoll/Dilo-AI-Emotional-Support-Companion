@@ -426,7 +426,7 @@ import { readFileSync } from "node:fs";
 
 describe("server files load on Vercel", () => {
   // Vercel runs api/ as plain Node ES modules, which need explicit file extensions on relative imports.
-  it.each(["api/chat.ts", "server/chat.ts"])("%s uses .js extensions for relative runtime imports", (file) => {
+  it.each(["api/chat.ts", "server/chat.ts", "api/auth.ts", "server/auth.ts"])("%s uses .js extensions for relative runtime imports", (file) => {
     const source = readFileSync(file, "utf8");
     const relative = [...source.matchAll(/^import (?!type )[^;]*from "(\.[^"]+)";/gm)].map((m) => m[1]);
     expect(relative.length).toBeGreaterThan(0);

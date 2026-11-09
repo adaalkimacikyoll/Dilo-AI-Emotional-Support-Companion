@@ -40,9 +40,10 @@ E-Mail: ${OPERATOR.email}
 
 ## 2. Das Wichtigste in Kürze
 
-- Dilo hat **keine Cookies, kein Tracking und keine Analyse-Tools**. Konten existieren nur verschlüsselt auf deinem Gerät, nicht bei uns.
+- Dilo hat **keine Cookies, kein Tracking und keine Analyse-Tools**. Deine Inhalte existieren nur verschlüsselt auf deinem Gerät, nicht bei uns.
 - Deine Nachrichten an Dilo werden **nur zur Erstellung der Antwort** an einen KI-Dienst in der EU (Scaleway, Paris) übertragen und dort **nicht zum Training verwendet**. Wir selbst speichern deine Nachrichten nicht.
 - Tagebucheinträge und Notizen verlassen **nie** dein Gerät.
+- Für die E-Mail-Bestätigung und das Zurücksetzen des Passworts senden wir dir Codes per E-Mail und speichern eine verschlüsselte Kopie deines Datenschlüssels, aber nie deine Inhalte (Abschnitt 5).
 - Darüber hinaus fallen personenbezogene Daten nur in technisch notwendigem Umfang an (Server-Logdateien beim Hoster).
 
 ## 3. Hosting
@@ -53,13 +54,25 @@ Diese Website und ihre Server-Funktion werden bei Vercel Inc. (USA) gehostet; di
 
 Dilo speichert folgende Daten ausschließlich lokal in deinem Browser (Local Storage): dein Konto mit Gesprächen, Tagebucheinträgen, Notizen und Stimmung (verschlüsselt), Einstellungen, deine Einwilligung (mit Zeitpunkt und Version). Diese Speicherung ist für den von dir gewünschten Dienst unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG). Da deine Inhalte Angaben zu deiner Gesundheit enthalten können, erfolgt ihre Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a DSGVO).
 
-Deine Inhalte (Gespräche, Tagebucheinträge, Notizen und Stimmung) werden in einem Konto gespeichert, das nur auf diesem Gerät existiert. Im Klartext gespeichert werden lediglich die von dir angegebene E-Mail-Adresse als Kontoname und technische Werte (Salt). Die E-Mail-Adresse verlässt dein Gerät nicht und wird nicht an uns oder Dritte übermittelt; wir versenden keine E-Mails. Alle Inhalte werden mit AES-256-GCM und einem zufälligen Datenschlüssel verschlüsselt. Dieser Datenschlüssel wird zweimal verschlüsselt gespeichert: einmal mit einem Schlüssel, der mit PBKDF2 (310.000 Iterationen) aus deinem Passwort abgeleitet wird, und einmal mit einem Schlüssel aus deinem Wiederherstellungscode, der dir bei der Kontoerstellung einmalig angezeigt wird. Der Datenschlüssel wird nur während der Sitzung im Arbeitsspeicher gehalten. Weder dein Passwort noch dein Wiederherstellungscode werden gespeichert. Mit dem Wiederherstellungscode kannst du ein neues Passwort festlegen; ohne Passwort und Wiederherstellungscode können die Inhalte weder von dir noch von uns wiederhergestellt werden. Konten werden nicht mit anderen Geräten synchronisiert.
+Deine Inhalte (Gespräche, Tagebucheinträge, Notizen und Stimmung) werden in einem Konto gespeichert, das nur auf diesem Gerät existiert. Im Klartext gespeichert werden lediglich die von dir angegebene E-Mail-Adresse als Kontoname und technische Werte (Salt). Alle Inhalte werden mit AES-256-GCM und einem zufälligen Datenschlüssel verschlüsselt. Dieser Datenschlüssel wird auf deinem Gerät mit einem Schlüssel verschlüsselt gespeichert, der mit PBKDF2 (310.000 Iterationen) aus deinem Passwort abgeleitet wird, und während der Sitzung nur im Arbeitsspeicher gehalten. Dein Passwort wird nicht gespeichert. Für das Zurücksetzen des Passworts per E-Mail siehe Abschnitt 5. Konten werden nicht mit anderen Geräten synchronisiert.
 
 Gespräche, die du zusätzlich mit einem eigenen Passwort sperrst, werden auf dieselbe Weise ein weiteres Mal verschlüsselt.
 
 Du kannst alle Daten jederzeit in den Einstellungen unter „Alle meine Daten löschen und Einwilligung widerrufen“ oder über die Einstellungen deines Browsers löschen.
 
-## 5. Erzeugung der Antworten (KI-Verarbeitung)
+## 5. E-Mail-Bestätigung und Passwort-Zurücksetzen
+
+Damit du dein Passwort zurücksetzen kannst, ohne deine Inhalte zu verlieren, bestätigst du bei der Kontoerstellung deine E-Mail-Adresse mit einem Code. Dafür und für das Zurücksetzen des Passworts verarbeiten wir:
+
+- **Deine E-Mail-Adresse**, nur um dir einen 6-stelligen Code zu senden. Die E-Mail wird über **Brevo** (Sendinblue SAS, Paris, Frankreich) als Auftragsverarbeiter nach Art. 28 DSGVO versendet. Wir speichern deine E-Mail-Adresse nicht im Klartext.
+- **Einen pseudonymen Schlüssel** (HMAC-SHA-256 deiner E-Mail-Adresse mit einem geheimen Serverschlüssel) und **eine verschlüsselte Kopie des Datenschlüssels deines Kontos**. Diese Kopie ist mit einem Serverschlüssel verschlüsselt. Deine Inhalte selbst werden nie an uns übertragen; mit dieser Kopie allein lassen sie sich daher nicht lesen.
+- **Codes** (nur als HMAC gespeichert, 10 Minuten gültig, höchstens 5 Versuche) und **Zähler zur Missbrauchsbegrenzung** (pro pseudonymisierter E-Mail-Adresse und pseudonymisierter IP-Adresse, nach einer Stunde gelöscht).
+
+Diese Daten werden bei **Upstash** (Upstash, Inc.) in der Region Frankfurt (EU) gespeichert, ebenfalls als Auftragsverarbeiter nach Art. 28 DSGVO. Dort liegt auch ein Zähler der verbrauchten KI-Kapazität ohne personenbezogene Daten.
+
+Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung der von dir gewünschten Kontofunktion). Die Kopie des Datenschlüssels wird gelöscht, wenn du dein Konto oder alle Daten in den Einstellungen löschst. Ohne die Daten auf deinem Gerät ist sie wertlos.
+
+## 6. Erzeugung der Antworten (KI-Verarbeitung)
 
 Wenn du Dilo eine Nachricht sendest, überträgt dein Browser den Gesprächsverlauf (deine Nachrichten und Dilos bisherige Antworten im aktuellen Gespräch), die gewählten Einstellungen (Sprache, Gesprächsstil, Antwortart, Stimmung) und einen Systemhinweis an unsere Server-Funktion bei Vercel (Region Frankfurt). Diese leitet die Daten an den KI-Dienst ${AI_PROVIDER.name} der Scaleway SAS (Frankreich) weiter, wo ein KI-Sprachmodell in einem Rechenzentrum in ${AI_PROVIDER.location} die Antwort erzeugt. Die Antwort wird direkt an deinen Browser zurückgesendet.
 
@@ -69,19 +82,19 @@ Da deine Nachrichten Angaben zu deiner Gesundheit enthalten können, erfolgt die
 
 Zum Schutz vor Missbrauch wird die IP-Adresse kurzzeitig im Arbeitsspeicher verwendet, um die Anzahl der Anfragen zu begrenzen (Art. 6 Abs. 1 lit. f DSGVO); sie wird nicht dauerhaft gespeichert.
 
-## 6. Keine Weitergabe an weitere Dritte
+## 7. Keine Weitergabe an weitere Dritte
 
-Außer an die genannten Dienstleister (Vercel, Scaleway) werden keine Daten übermittelt. Schriftarten und alle anderen technischen Bestandteile werden von unserem eigenen Hoster ausgeliefert.
+Außer an die genannten Dienstleister (Vercel, Scaleway, Brevo, Upstash) werden keine Daten übermittelt. Schriftarten und alle anderen technischen Bestandteile werden von unserem eigenen Hoster ausgeliefert.
 
-## 7. Externe Links
+## 8. Externe Links
 
 Links zu externen Seiten (z. B. findahelpline.com) und Telefonnummern werden erst aktiv, wenn du sie anklickst. Für die dortige Datenverarbeitung ist der jeweilige Anbieter verantwortlich.
 
-## 8. Mindestalter
+## 9. Mindestalter
 
 Dilo richtet sich ausschließlich an Personen ab 18 Jahren.
 
-## 9. Deine Rechte
+## 10. Deine Rechte
 
 Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21 DSGVO). Eine erteilte Einwilligung kannst du jederzeit mit Wirkung für die Zukunft widerrufen (Art. 7 Abs. 3 DSGVO). Da deine Inhalte nur auf deinem Gerät gespeichert sind, kannst du sie dort selbst einsehen und löschen. Du hast außerdem das Recht, dich bei einer Datenschutz-Aufsichtsbehörde zu beschweren, insbesondere in dem Bundesland deines Aufenthaltsorts oder des Sitzes des Verantwortlichen (Art. 77 DSGVO).`,
 
@@ -121,7 +134,7 @@ Dilo wird ohne Gewähr für eine ständige Verfügbarkeit bereitgestellt. Für d
 
 ## 8. Deine Daten
 
-Alle Inhalte werden nur verschlüsselt in deinem Konto auf deinem Gerät gespeichert. Wir können sie weder einsehen noch wiederherstellen. Beim Löschen der Browserdaten gehen sie verloren; ohne dein Passwort oder deinen Wiederherstellungscode lassen sie sich nicht wiederherstellen. Du bist für die sichere Aufbewahrung von Passwort und Wiederherstellungscode verantwortlich. Einzelheiten in der Datenschutzerklärung.
+Alle Inhalte werden nur verschlüsselt in deinem Konto auf deinem Gerät gespeichert. Wir können sie nicht einsehen. Beim Löschen der Browserdaten gehen sie verloren. Wenn du dein Passwort vergisst, kannst du es mit einem Code an deine bestätigte E-Mail-Adresse zurücksetzen. Du bist für die sichere Aufbewahrung deines Passworts und den Schutz deines E-Mail-Postfachs verantwortlich. Einzelheiten in der Datenschutzerklärung.
 
 ## 9. Haftung
 
@@ -166,9 +179,10 @@ Email: ${OPERATOR.email}
 
 ## 2. Summary
 
-- Dilo has **no cookies, no tracking and no analytics**. Accounts exist only, encrypted, on your device, never with us.
+- Dilo has **no cookies, no tracking and no analytics**. Your content exists only, encrypted, on your device, never with us.
 - Your messages to Dilo are sent **only to generate the reply** to an AI service in the EU (Scaleway, Paris), where they are **not used for training**. We do not store your messages ourselves.
 - Journal entries and notes **never** leave your device.
+- For email confirmation and password reset we email you codes and store an encrypted copy of your data key, but never your content (section 5).
 - Beyond that, personal data is only processed to the extent technically necessary (server log files at our hosting provider).
 
 ## 3. Hosting
@@ -179,13 +193,25 @@ This website and its server function are hosted by Vercel Inc. (USA); the server
 
 Dilo stores the following only in your browser (Local Storage): your account with conversations, journal entries, notes and mood (encrypted), settings, your consent (with time and version). This storage is strictly necessary for the service you request (§ 25(2) no. 2 TDDDG). Because your content may include information about your health, it is processed on the basis of your explicit consent (Art. 9(2)(a) GDPR).
 
-Your content (conversations, journal entries, notes and mood) is stored in an account that exists only on this device. Only the email address you enter as your account name and technical values (a salt) are stored in plain text. The email address never leaves your device and is not sent to us or anyone else; we do not send emails. All content is encrypted with AES-256-GCM using a random data key. That data key is stored encrypted twice: once with a key derived from your password with PBKDF2 (310,000 iterations), and once with a key derived from your recovery code, which is shown to you once when you create the account. The data key is kept in memory only for the session. Neither your password nor your recovery code is stored. With the recovery code you can set a new password; without both the password and the recovery code, neither you nor we can restore the content. Accounts are not synchronised with other devices.
+Your content (conversations, journal entries, notes and mood) is stored in an account that exists only on this device. Only the email address you enter as your account name and technical values (a salt) are stored in plain text. All content is encrypted with AES-256-GCM using a random data key. That data key is stored on your device, encrypted with a key derived from your password with PBKDF2 (310,000 iterations), and is kept in memory only for the session. Your password is not stored. For resetting your password by email, see section 5. Accounts are not synchronised with other devices.
 
 Conversations you additionally lock with their own password are encrypted a second time in the same way.
 
 You can delete all data at any time in the settings under "Delete all my data and withdraw consent", or through your browser settings.
 
-## 5. Generating replies (AI processing)
+## 5. Email confirmation and password reset
+
+So that you can reset your password without losing your content, you confirm your email address with a code when you create your account. For this and for resetting your password we process:
+
+- **Your email address**, only to send you a 6-digit code. The email is sent via **Brevo** (Sendinblue SAS, Paris, France) as a processor under Art. 28 GDPR. We do not store your email address in plain text.
+- **A pseudonymous key** (HMAC-SHA-256 of your email address with a secret server key) and **an encrypted copy of your account's data key**. This copy is encrypted with a server key. Your content itself is never sent to us, so this copy alone cannot be used to read it.
+- **Codes** (stored only as an HMAC, valid for 10 minutes, at most 5 attempts) and **counters that limit misuse** (per pseudonymised email address and pseudonymised IP address, deleted after one hour).
+
+This data is stored with **Upstash** (Upstash, Inc.) in the Frankfurt region (EU), also as a processor under Art. 28 GDPR. A counter of the AI capacity used, which contains no personal data, is kept there too.
+
+The legal basis is Art. 6(1)(b) GDPR (providing the account function you asked for). The copy of the data key is deleted when you delete your account or all data in the settings. Without the data on your device it is useless.
+
+## 6. Generating replies (AI processing)
 
 When you send Dilo a message, your browser sends the conversation (your messages and Dilo's earlier replies in the current conversation), your chosen settings (language, conversation style, response type, mood) and a system instruction to our server function at Vercel (Frankfurt region). It forwards this data to the AI service ${AI_PROVIDER.name} of Scaleway SAS (France), where an AI language model in a data centre in ${AI_PROVIDER.location} generates the reply. The reply is sent straight back to your browser.
 
@@ -195,19 +221,19 @@ Because your messages may contain information about your health, they are proces
 
 To prevent abuse, your IP address is used briefly in memory to limit the number of requests (Art. 6(1)(f) GDPR); it is not stored permanently.
 
-## 6. No sharing with other third parties
+## 7. No sharing with other third parties
 
-No data is shared with anyone other than the service providers named above (Vercel, Scaleway). Fonts and all other technical components are delivered by our own hosting provider.
+No data is shared with anyone other than the service providers named above (Vercel, Scaleway, Brevo, Upstash). Fonts and all other technical components are delivered by our own hosting provider.
 
-## 7. External links
+## 8. External links
 
 Links to external websites (for example findahelpline.com) and phone numbers only become active when you click them. The respective provider is responsible for any data processing there.
 
-## 8. Minimum age
+## 9. Minimum age
 
 Dilo is intended exclusively for people aged 18 and over.
 
-## 9. Your rights
+## 10. Your rights
 
 You have the right of access (Art. 15), rectification (Art. 16), erasure (Art. 17), restriction of processing (Art. 18), data portability (Art. 20) and objection (Art. 21 GDPR). You can withdraw your consent at any time with effect for the future (Art. 7(3) GDPR). Since your content is stored only on your device, you can view and delete it there yourself. You also have the right to lodge a complaint with a data protection supervisory authority, in particular in the state where you live or where the controller is based (Art. 77 GDPR).`,
 
@@ -247,7 +273,7 @@ Dilo is provided without any guarantee of continuous availability. Replies requi
 
 ## 8. Your data
 
-All content is stored only, encrypted, in your account on your device. We can neither view nor restore it. It is lost when you clear your browser data and cannot be recovered without your password or recovery code. You are responsible for keeping your password and recovery code safe. See the privacy policy for details.
+All content is stored only, encrypted, in your account on your device. We cannot view it. It is lost when you clear your browser data. If you forget your password, you can reset it with a code sent to your confirmed email address. You are responsible for keeping your password safe and protecting your email inbox. See the privacy policy for details.
 
 ## 9. Liability
 

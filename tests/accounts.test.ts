@@ -110,67 +110,51 @@ describe("password rules", () => {
   });
 });
 
-import { generateRecoveryCode, newRecoveryCode, normalizeRecoveryCode, resetPassword } from "../src/lib/accounts";
+import { exportDataKey, resetPasswordWithKey, setEmailReset } from "../src/lib/accounts";
 import { deriveKeyFromPassword, sealWithKey } from "../src/lib/lock";
 
-describe("recovery codes", () => {
-  it("look like five groups of five unambiguous characters", () => {
-    const code = generateRecoveryCode();
-    expect(code).toMatch(/^[A-HJ-NP-Z2-9]{5}(-[A-HJ-NP-Z2-9]{5}){4}$/);
-    expect(generateRecoveryCode()).not.toBe(code);
-    expect(normalizeRecoveryCode(" k7qpm-2xwrt ")).toBe("K7QPM2XWRT");
-  });
-
-  it("are shown once at sign-up and never stored in plain text", async () => {
-    const session = await createAccount("Ada", "Sunny!2026");
-    expect(session.recoveryCode).toBeTruthy();
-    expect(JSON.stringify([...store.values()])).not.toContain(normalizeRecoveryCode(session.recoveryCode!));
-    expect((await signIn("Ada", "Sunny!2026")).recoveryCode).toBeUndefined();
-  });
-
-  it("reset the password and keep all data", async () => {
-    const session = await createAccount("Ada", "Sunny!2026");
+describe("password reset with the emailed key", () => {
+  it("sets a new password with the account's data key and keeps all data", async () => {
+    const session = await createAccount("ada@example.com", "Sunny!2026");
     await saveVault(session, { ...session.vault, conversations: [conversation] });
+    const dataKey = await exportDataKey(session.key);
 
-    const reset = await resetPassword("ada", session.recoveryCode!.toLowerCase(), "Ocean#2027");
+    const reset = await resetPasswordWithKey("ADA@example.com", dataKey, "Ocean#2027");
     expect(reset.vault.conversations[0].title).toBe("Exams");
-    expect(reset.recoveryCode).toBeTruthy();
-    expect(reset.recoveryCode).not.toBe(session.recoveryCode);
-
-    await expect(signIn("Ada", "Sunny!2026")).rejects.toBeInstanceOf(WrongPasswordError);
-    expect((await signIn("Ada", "Ocean#2027")).vault.conversations[0].title).toBe("Exams");
-    // The used code no longer works; the new one does.
-    await expect(resetPassword("Ada", session.recoveryCode!, "Other#2028")).rejects.toBeInstanceOf(WrongPasswordError);
-    expect((await resetPassword("Ada", reset.recoveryCode!, "Other#2028")).vault.conversations).toHaveLength(1);
+    expect(reset.account.emailReset).toBe(true);
+    await expect(signIn("ada@example.com", "Sunny!2026")).rejects.toBeInstanceOf(WrongPasswordError);
+    expect((await signIn("ada@example.com", "Ocean#2027")).vault.conversations[0].title).toBe("Exams");
   });
 
-  it("reject a wrong code or unknown name with the same error", async () => {
-    await createAccount("Ada", "Sunny!2026");
-    await expect(resetPassword("Ada", generateRecoveryCode(), "Ocean#2027")).rejects.toBeInstanceOf(WrongPasswordError);
-    await expect(resetPassword("Nobody", generateRecoveryCode(), "Ocean#2027")).rejects.toBeInstanceOf(WrongPasswordError);
+  it("rejects a wrong key or an unknown account", async () => {
+    const session = await createAccount("ada@example.com", "Sunny!2026");
+    await saveVault(session, { ...session.vault, conversations: [conversation] });
+    const wrong = btoa(String.fromCharCode(...new Uint8Array(32).fill(1)));
+    await expect(resetPasswordWithKey("ada@example.com", wrong, "Ocean#2027")).rejects.toBeInstanceOf(WrongPasswordError);
+    await expect(resetPasswordWithKey("nobody@example.com", wrong, "Ocean#2027")).rejects.toBeInstanceOf(WrongPasswordError);
+    // The old password still works after a failed attempt.
+    expect((await signIn("ada@example.com", "Sunny!2026")).vault.conversations).toHaveLength(1);
   });
 
-  it("can be replaced while signed in", async () => {
-    const session = await createAccount("Ada", "Sunny!2026");
-    const { recoveryCode } = await newRecoveryCode(session);
-    await expect(resetPassword("Ada", session.recoveryCode!, "Ocean#2027")).rejects.toBeInstanceOf(WrongPasswordError);
-    expect((await resetPassword("Ada", recoveryCode, "Ocean#2027")).account.name).toBe("Ada");
+  it("remembers whether email reset is on", async () => {
+    const session = await createAccount("ada@example.com", "Sunny!2026");
+    expect(session.account.emailReset).toBeUndefined();
+    setEmailReset(session.account.id, true);
+    expect(listAccounts()[0].emailReset).toBe(true);
   });
 
-  it("are added to accounts created before recovery codes, keeping their data", async () => {
+  it("moves accounts from before data keys to one, keeping their data", async () => {
     // Old format: vault sealed directly with the password key, no data key.
     const { key, salt } = await deriveKeyFromPassword("secret1");
-    const old = { id: "old1", name: "Deniz", salt, check: await sealWithKey(key, "dilo-account-ok"), createdAt: 1 };
+    const old = { id: "old1", name: "deniz@example.com", salt, check: await sealWithKey(key, "dilo-account-ok"), createdAt: 1 };
     store.set("dilo.accounts", JSON.stringify([old]));
     store.set("dilo.vault.old1", JSON.stringify(await sealWithKey(key, { conversations: [conversation], activeId: null, entries: [], notes: [], mood: null })));
 
-    const upgraded = await signIn("Deniz", "secret1");
-    expect(upgraded.recoveryCode).toBeTruthy();
+    const upgraded = await signIn("deniz@example.com", "secret1");
     expect(upgraded.vault.conversations[0].title).toBe("Exams");
     expect(listAccounts()[0].keys).toBeTruthy();
-
-    // Password still works, and so does the new recovery code.
-    expect((await signIn("Deniz", "secret1")).vault.conversations).toHaveLength(1);
-    expect((await resetPassword("Deniz", upgraded.recoveryCode!, "Ocean#2027")).vault.conversations).toHaveLength(1);
+    // The new data key opens the vault, so email reset can be turned on for this account.
+    const reset = await resetPasswordWithKey("deniz@example.com", await exportDataKey(upgraded.key), "Ocean#2027");
+    expect(reset.vault.conversations).toHaveLength(1);
   });
 });

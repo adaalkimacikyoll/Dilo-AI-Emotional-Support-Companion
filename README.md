@@ -4,7 +4,7 @@
 ![React](https://img.shields.io/badge/react-19-61DAFB?logo=react)
 ![Vite](https://img.shields.io/badge/vite-6-646CFF?logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/tailwind-4-06B6D4?logo=tailwindcss)
-![Tests](https://img.shields.io/badge/tests-131_passing-2E7D32)
+![Tests](https://img.shields.io/badge/tests-140_passing-2E7D32)
 ![AI](https://img.shields.io/badge/AI-EU--hosted-5A4FCF)
 
 **Dilo is a private AI companion for emotional wellbeing.** It listens without judgement, talks like a warm friend or uses methods from psychology, keeps an encrypted journal on your device, and points you to real, human help the moment a conversation signals risk.
@@ -21,12 +21,12 @@
   <tr>
     <td width="33%"><img src="docs/screenshots/friend-mobile.png" alt="Friend mode on a phone"></td>
     <td width="33%"><img src="docs/screenshots/safety-mobile.png" alt="Crisis lines shown under a message that signals risk"></td>
-    <td width="33%"><img src="docs/screenshots/recovery-code.png" alt="Recovery code shown once at sign-up"></td>
+    <td width="33%"><img src="docs/screenshots/code-step.png" alt="Email code step at sign-up"></td>
   </tr>
   <tr>
     <td align="center"><sub>Friend mode</sub></td>
     <td align="center"><sub>Safety net, independent of the AI</sub></td>
-    <td align="center"><sub>Recovery code instead of a password reset server</sub></td>
+    <td align="center"><sub>Email confirmed with a 6-digit code</sub></td>
   </tr>
 </table>
 
@@ -41,7 +41,7 @@
 - **"Just listen" or "Listen and give tips"**, plus an optional mood that shapes the reply.
 - **Fast on every device.** Replies stream from an EU-hosted model in about a second.
 - **Encrypted journal.** Every conversation is saved and can be continued, deleted or locked with its own password. Journal entries and notes never leave the device and are never sent to the AI.
-- **Device accounts with recovery codes.** Sign up with an email that never leaves the device; forgot your password? The recovery code shown once at sign-up sets a new one and keeps all data.
+- **Device accounts with email reset.** Sign up with an email confirmed by a 6-digit code. Forgot your password? A code sent to your email sets a new one, and all your conversations stay, because the server only keeps an encrypted copy of the vault's key, never the vault.
 - **Safety by design.** Crisis lines appear under any message that signals risk, from a keyword check in 8 languages that works even when the AI fails. A conversation in which someone states an intent to hurt another person is closed for good, with emergency numbers.
 - **Quote and affirmation of the day** from documented, public-domain sources.
 - **Installable app (PWA)** with offline access to the journal, light/dark themes, three text sizes, and right-to-left layouts for Arabic and Persian.
@@ -73,7 +73,7 @@ Only the current conversation leaves the device, and only to generate a reply. N
 
 ## Engineering decisions
 
-**Encryption with a recoverable data key.** Each account's vault is encrypted with a random 256-bit data key. That key is stored twice, each copy sealed (AES-GCM) under a key derived with PBKDF2 (310,000 iterations) from a secret only the user has: the password, and a 125-bit recovery code shown once at sign-up. Either secret opens the vault, so a forgotten password can be replaced without a server and without anyone else being able to read the data. Using the code rotates it. Accounts created before recovery codes are migrated on their next sign-in, writing the re-sealed vault before switching the account record so a crash can never lock a user out. (`src/lib/accounts.ts`)
+**Password reset by email without giving up end-to-end privacy.** Each account's vault is encrypted on the device with a random 256-bit data key, sealed under a key derived from the password (PBKDF2, 310,000 iterations). To let users reset a forgotten password without losing data, the server keeps a copy of only the data key, encrypted with a server secret and stored under an HMAC of the email address. The vault never leaves the device, so neither side alone can read anything. Emailed codes are stored only as HMACs, expire after 10 minutes, allow 5 attempts, and are rate-limited per email, per IP and per day; a reset request for an unknown address looks exactly like a real one, so nobody can find out who uses Dilo. (`server/auth.ts`, `src/lib/accounts.ts`)
 
 **A safety net that doesn't depend on the model.** A deterministic keyword check runs on every message before anything is sent, in 8 languages, including Greek without accents and Greeklish. It is deliberately conservative where a false positive is costly: closing a conversation requires explicit first-person intent toward another person ("I'm going to kill him"), not figures of speech ("my mum will kill me") or self-harm, which keeps the conversation open and shows crisis lines instead. The model adds a second layer through `[CRISIS]` and `[HARM]` markers, and the server refuses any conversation the client should have closed. (`src/lib/crisisDetect.ts`, `server/chat.ts`)
 
@@ -91,20 +91,22 @@ Only the current conversation leaves the device, and only to generate a reply. N
 | Build | Vite 6, PWA (manifest + service worker) |
 | Server | Vercel Function (`api/chat.ts`, Frankfurt), web-standard `Request`/`Response` |
 | AI | Gemma 4 on Scaleway Generative APIs (Paris), OpenAI-compatible, streamed |
-| Storage | Encrypted vaults in `localStorage`; token counter in Upstash Redis |
+| Storage | Encrypted vaults in `localStorage`; token counter, email codes and key copies in Upstash Redis (Frankfurt) |
+| Email | Brevo transactional API (codes in 8 languages) |
 | Crypto | Web Crypto API (PBKDF2-SHA-256, AES-256-GCM) |
-| Tests | Vitest (131 unit tests) |
+| Tests | Vitest (140 unit tests) |
 
 ## Project structure
 
 ```
 api/chat.ts                 Vercel Function entry point
 server/chat.ts              validation, rate limiting, token budget, provider call, streaming
+server/auth.ts              email codes, key copies for password reset, rate limits
 src/App.tsx                 consent → account → chat / journal
-src/components/             ChatMessage, Composer, JournalView, AccountGate, RecoveryCodeView, DailyCard, ...
+src/components/             ChatMessage, Composer, JournalView, AccountGate, EmailResetSetup, DailyCard, ...
 src/lib/prompt.ts           system prompt, safety markers
 src/lib/crisisDetect.ts     keyword safety net (8 languages)
-src/lib/accounts.ts         device accounts, data keys, recovery codes
+src/lib/accounts.ts         device accounts, data keys, password reset
 src/lib/lock.ts             PBKDF2 + AES-GCM helpers, password rules
 src/lib/daily.ts            quote and affirmation of the day
 src/lib/legal.ts            Impressum, privacy policy, terms (de/en)
@@ -134,8 +136,9 @@ npm run build
 1. Create a Scaleway API key: console → **IAM** → **API keys** → **Generate API key**, and copy the **secret key**.
 2. In Vercel → **Settings → Environment Variables**, add `AI_API_KEY` with the secret key.
 3. In Vercel → **Storage**, add **Upstash for Redis** (free plan, Frankfurt) and connect it. This adds `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Dilo then stops at 900,000 tokens (`AI_TOKEN_BUDGET`) and shows "Dilo is taking a break" instead of creating costs.
-4. Optional: `AI_MODEL` (default `gemma-4-26b-a4b-it`) and `AI_BASE_URL` (default `https://api.scaleway.ai/v1`).
-5. Fill in `src/lib/operator.ts` for the Impressum and have the legal texts reviewed by a lawyer.
+4. Email codes: create a free [Brevo](https://www.brevo.com) account, verify a sender address, create an API key, and add `BREVO_API_KEY` and `MAIL_FROM` (the verified sender) in Vercel.
+5. Optional: `AI_MODEL` (default `gemma-4-26b-a4b-it`) and `AI_BASE_URL` (default `https://api.scaleway.ai/v1`).
+6. Fill in `src/lib/operator.ts` for the Impressum and have the legal texts reviewed by a lawyer.
 
 ## The story behind it
 
@@ -147,7 +150,7 @@ Dilo's name comes from my cousin **Dilvin**, a psychology student who has always
 
 - [x] Crisis resources and an AI-independent safety net
 - [x] EU-hosted AI with streamed replies
-- [x] Encrypted device accounts with recovery codes
+- [x] Encrypted device accounts with password reset by email
 - [x] Installable app with quote and affirmation of the day
 - [ ] Opt-in daily check-in notifications
 - [ ] End-to-end encrypted sync across devices

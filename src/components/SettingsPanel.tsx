@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound, KeyRound, Smartphone, Check } from "lucide-react";
+import { Footprints, Coffee, Lightbulb, SquarePen, ShieldCheck, Trash2, LogOut, UserRound, MailCheck, Smartphone, Check } from "lucide-react";
 import { cn } from "../lib/utils";
 import { LANGUAGES } from "../lib/api";
 import type { LegalPage } from "../lib/legal";
@@ -28,7 +28,9 @@ interface Props {
   accountName: string;
   onSignOut: () => void;
   onDeleteAccount: () => void;
-  onNewRecoveryCode: () => void;
+  /** Whether password reset by email is on for this account. */
+  emailReset: boolean;
+  onEmailReset: () => void;
   onOpenLegal: (page: LegalPage) => void;
 }
 
@@ -101,14 +103,21 @@ export function SettingsPanel(p: Props) {
           <UserRound className="h-4 w-4 text-moss" aria-hidden="true" />
           {t.signedInAs.replace("{name}", p.accountName)}
         </p>
+        <div className="flex items-start gap-2 text-sm">
+          <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-moss" aria-hidden="true" />
+          <div>
+            <p className="text-ink">{p.emailReset ? t.emailResetOn : t.emailResetOff}</p>
+            {!p.emailReset && (
+              <button type="button" onClick={p.onEmailReset} className="mt-1 font-medium text-moss underline underline-offset-2 hover:text-ink">
+                {t.emailResetTurnOn}
+              </button>
+            )}
+          </div>
+        </div>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           <button type="button" onClick={p.onSignOut} className="flex items-center gap-2 text-sm font-medium text-ink hover:underline">
             <LogOut className="h-4 w-4" aria-hidden="true" />
             {t.signOut}
-          </button>
-          <button type="button" onClick={p.onNewRecoveryCode} className="flex items-center gap-2 text-sm font-medium text-ink hover:underline">
-            <KeyRound className="h-4 w-4" aria-hidden="true" />
-            {t.newRecoveryButton}
           </button>
           <button type="button" onClick={p.onDeleteAccount} className="flex items-center gap-2 text-sm font-medium text-alert hover:underline">
             <Trash2 className="h-4 w-4" aria-hidden="true" />
