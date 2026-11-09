@@ -24,7 +24,7 @@ function devApi(env: Record<string, string>): Plugin {
         });
         const response: Response = await handleAuth(
           request,
-          { KV_REST_API_URL: env.KV_REST_API_URL, KV_REST_API_TOKEN: env.KV_REST_API_TOKEN, BREVO_API_KEY: env.BREVO_API_KEY, MAIL_FROM: env.MAIL_FROM, BREVO_BASE_URL: env.BREVO_BASE_URL },
+          { KV_REST_API_URL: env.KV_REST_API_URL, KV_REST_API_TOKEN: env.KV_REST_API_TOKEN, GMAIL_USER: env.GMAIL_USER, GMAIL_APP_PASSWORD: env.GMAIL_APP_PASSWORD, BREVO_API_KEY: env.BREVO_API_KEY, MAIL_FROM: env.MAIL_FROM, BREVO_BASE_URL: env.BREVO_BASE_URL },
           fetch,
           { ...(devStore ? { store: devStore } : {}), rateLimit: false }, // local development only
         );

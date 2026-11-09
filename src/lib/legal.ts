@@ -64,11 +64,11 @@ Du kannst alle Daten jederzeit in den Einstellungen unter „Alle meine Daten l�
 
 Damit du dein Passwort zurücksetzen kannst, ohne deine Inhalte zu verlieren, bestätigst du bei der Kontoerstellung deine E-Mail-Adresse mit einem Code. Dafür und für das Zurücksetzen des Passworts verarbeiten wir:
 
-- **Deine E-Mail-Adresse**, nur um dir einen 6-stelligen Code zu senden. Die E-Mail wird über **Brevo** (Sendinblue SAS, Paris, Frankreich) als Auftragsverarbeiter nach Art. 28 DSGVO versendet. Wir speichern deine E-Mail-Adresse nicht im Klartext.
+- **Deine E-Mail-Adresse**, nur um dir einen 6-stelligen Code zu senden. Die E-Mail wird über ein Gmail-Konto von **Google** (Google Ireland Limited, Dublin, Irland) versendet. Dabei kann eine Übermittlung an Google LLC in den USA stattfinden, die nach dem EU-US Data Privacy Framework zertifiziert ist (Art. 45 DSGVO). Wir speichern deine E-Mail-Adresse nicht im Klartext.
 - **Einen pseudonymen Schlüssel** (HMAC-SHA-256 deiner E-Mail-Adresse mit einem geheimen Serverschlüssel) und **eine verschlüsselte Kopie des Datenschlüssels deines Kontos**. Diese Kopie ist mit einem Serverschlüssel verschlüsselt. Deine Inhalte selbst werden nie an uns übertragen; mit dieser Kopie allein lassen sie sich daher nicht lesen.
 - **Codes** (nur als HMAC gespeichert, 10 Minuten gültig, höchstens 5 Versuche) und **Zähler zur Missbrauchsbegrenzung** (pro pseudonymisierter E-Mail-Adresse und pseudonymisierter IP-Adresse, nach einer Stunde gelöscht).
 
-Diese Daten werden bei **Upstash** (Upstash, Inc.) in der Region Frankfurt (EU) gespeichert, ebenfalls als Auftragsverarbeiter nach Art. 28 DSGVO. Dort liegt auch ein Zähler der verbrauchten KI-Kapazität ohne personenbezogene Daten.
+Diese Daten werden bei **Upstash** (Upstash, Inc.) in der Region Frankfurt (EU) als Auftragsverarbeiter nach Art. 28 DSGVO gespeichert. Dort liegt auch ein Zähler der verbrauchten KI-Kapazität ohne personenbezogene Daten.
 
 Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Bereitstellung der von dir gewünschten Kontofunktion). Die Kopie des Datenschlüssels wird gelöscht, wenn du dein Konto oder alle Daten in den Einstellungen löschst. Ohne die Daten auf deinem Gerät ist sie wertlos.
 
@@ -84,7 +84,7 @@ Zum Schutz vor Missbrauch wird die IP-Adresse kurzzeitig im Arbeitsspeicher verw
 
 ## 7. Keine Weitergabe an weitere Dritte
 
-Außer an die genannten Dienstleister (Vercel, Scaleway, Brevo, Upstash) werden keine Daten übermittelt. Schriftarten und alle anderen technischen Bestandteile werden von unserem eigenen Hoster ausgeliefert.
+Außer an die genannten Dienstleister (Vercel, Scaleway, Google, Upstash) werden keine Daten übermittelt. Schriftarten und alle anderen technischen Bestandteile werden von unserem eigenen Hoster ausgeliefert.
 
 ## 8. Externe Links
 
@@ -203,11 +203,11 @@ You can delete all data at any time in the settings under "Delete all my data an
 
 So that you can reset your password without losing your content, you confirm your email address with a code when you create your account. For this and for resetting your password we process:
 
-- **Your email address**, only to send you a 6-digit code. The email is sent via **Brevo** (Sendinblue SAS, Paris, France) as a processor under Art. 28 GDPR. We do not store your email address in plain text.
+- **Your email address**, only to send you a 6-digit code. The email is sent through a Gmail account provided by **Google** (Google Ireland Limited, Dublin, Ireland). This may involve a transfer to Google LLC in the USA, which is certified under the EU-US Data Privacy Framework (Art. 45 GDPR). We do not store your email address in plain text.
 - **A pseudonymous key** (HMAC-SHA-256 of your email address with a secret server key) and **an encrypted copy of your account's data key**. This copy is encrypted with a server key. Your content itself is never sent to us, so this copy alone cannot be used to read it.
 - **Codes** (stored only as an HMAC, valid for 10 minutes, at most 5 attempts) and **counters that limit misuse** (per pseudonymised email address and pseudonymised IP address, deleted after one hour).
 
-This data is stored with **Upstash** (Upstash, Inc.) in the Frankfurt region (EU), also as a processor under Art. 28 GDPR. A counter of the AI capacity used, which contains no personal data, is kept there too.
+This data is stored with **Upstash** (Upstash, Inc.) in the Frankfurt region (EU) as a processor under Art. 28 GDPR. A counter of the AI capacity used, which contains no personal data, is kept there too.
 
 The legal basis is Art. 6(1)(b) GDPR (providing the account function you asked for). The copy of the data key is deleted when you delete your account or all data in the settings. Without the data on your device it is useless.
 
@@ -223,7 +223,7 @@ To prevent abuse, your IP address is used briefly in memory to limit the number 
 
 ## 7. No sharing with other third parties
 
-No data is shared with anyone other than the service providers named above (Vercel, Scaleway, Brevo, Upstash). Fonts and all other technical components are delivered by our own hosting provider.
+No data is shared with anyone other than the service providers named above (Vercel, Scaleway, Google, Upstash). Fonts and all other technical components are delivered by our own hosting provider.
 
 ## 8. External links
 

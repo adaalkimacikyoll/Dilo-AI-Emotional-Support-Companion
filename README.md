@@ -92,7 +92,7 @@ Only the current conversation leaves the device, and only to generate a reply. N
 | Server | Vercel Function (`api/chat.ts`, Frankfurt), web-standard `Request`/`Response` |
 | AI | Gemma 4 on Scaleway Generative APIs (Paris), OpenAI-compatible, streamed |
 | Storage | Encrypted vaults in `localStorage`; token counter, email codes and key copies in Upstash Redis (Frankfurt) |
-| Email | Brevo transactional API (codes in 8 languages) |
+| Email | Gmail via nodemailer (codes in 8 languages); Brevo API as an alternative |
 | Crypto | Web Crypto API (PBKDF2-SHA-256, AES-256-GCM) |
 | Tests | Vitest (140 unit tests) |
 
@@ -136,7 +136,7 @@ npm run build
 1. Create a Scaleway API key: console → **IAM** → **API keys** → **Generate API key**, and copy the **secret key**.
 2. In Vercel → **Settings → Environment Variables**, add `AI_API_KEY` with the secret key.
 3. In Vercel → **Storage**, add **Upstash for Redis** (free plan, Frankfurt) and connect it. This adds `KV_REST_API_URL` and `KV_REST_API_TOKEN`. Dilo then stops at 900,000 tokens (`AI_TOKEN_BUDGET`) and shows "Dilo is taking a break" instead of creating costs.
-4. Email codes: create a free [Brevo](https://www.brevo.com) account, verify a sender address, create an API key, and add `BREVO_API_KEY` and `MAIL_FROM` (the verified sender) in Vercel.
+4. Email codes: add `GMAIL_USER` and `GMAIL_APP_PASSWORD` (a Google app password) in Vercel. Brevo works too (`BREVO_API_KEY`, `MAIL_FROM`).
 5. Optional: `AI_MODEL` (default `gemma-4-26b-a4b-it`) and `AI_BASE_URL` (default `https://api.scaleway.ai/v1`).
 6. Fill in `src/lib/operator.ts` for the Impressum and have the legal texts reviewed by a lawyer.
 

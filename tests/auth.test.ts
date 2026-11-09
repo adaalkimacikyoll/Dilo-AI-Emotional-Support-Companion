@@ -119,3 +119,31 @@ describe("email codes and password reset", () => {
     expect((await handleAuth(req(), env, t.fetchImpl)).status).toBe(500);
   });
 });
+
+describe("Gmail delivery", () => {
+  it("counts as configured with a Gmail user and app password", async () => {
+    const { emailConfigured } = await import("../server/auth");
+    expect(emailConfigured({ GMAIL_USER: "dilo@gmail.com", GMAIL_APP_PASSWORD: "abcd efgh ijkl mnop" })).toBe(true);
+    expect(emailConfigured({ GMAIL_USER: "dilo@gmail.com" })).toBe(false);
+    expect(emailConfigured({})).toBe(false);
+  });
+
+  it("hands a ready email to the sender in the user's language", async () => {
+    const store = memoryStore();
+    const outbox: { to: string; subject: string; text: string }[] = [];
+    const req = new Request("http://localhost/api/auth", {
+      method: "POST",
+      body: JSON.stringify({ action: "send-code", purpose: "reset", email: "ada@example.com", language: "de" }),
+    });
+    // A reset is only sent when a key is saved, so use "verify" via a second request.
+    await handleAuth(req, {}, fetch, { store, send: async (m) => void outbox.push(m) });
+    expect(outbox).toHaveLength(0);
+    const verify = new Request("http://localhost/api/auth", {
+      method: "POST",
+      body: JSON.stringify({ action: "send-code", purpose: "verify", email: "ada@example.com", language: "de" }),
+    });
+    expect((await handleAuth(verify, {}, fetch, { store, send: async (m) => void outbox.push(m) })).status).toBe(200);
+    expect(outbox[0].subject).toMatch(/^Dein Dilo-Code: \d{6}$/);
+    expect(outbox[0].text).toContain("10 Minuten");
+  });
+});

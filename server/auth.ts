@@ -1,4 +1,5 @@
 import { LANGUAGE_CODES, type LanguageCode } from "../src/lib/chat-types.js";
+import nodemailer from "nodemailer";
 import { EMAIL_TEXTS } from "../src/lib/email-texts.js";
 
 /**
@@ -16,14 +17,19 @@ import { EMAIL_TEXTS } from "../src/lib/email-texts.js";
  *  - reset       checks a reset code and returns the data key so the device can set a new password
  *  - delete-key  removes the stored key when an account is deleted (needs the key itself)
  *
- * Plain email addresses are never stored; they are used only to send the email (via Brevo).
+ * Plain email addresses are never stored; they are used only to send the email (via Gmail, or Brevo).
  */
 
 export interface AuthEnv {
+  /** Gmail account that sends the codes (like the portfolio site's contact form). */
+  GMAIL_USER?: string;
+  /** 16-character Google app password for GMAIL_USER (not the normal password). */
+  GMAIL_APP_PASSWORD?: string;
   KV_REST_API_URL?: string;
   KV_REST_API_TOKEN?: string;
   UPSTASH_REDIS_REST_URL?: string;
   UPSTASH_REDIS_REST_TOKEN?: string;
+  /** Alternative to Gmail. */
   BREVO_API_KEY?: string;
   /** Verified sender address in Brevo. */
   MAIL_FROM?: string;
@@ -184,20 +190,41 @@ const fail = (error: AuthErrorKind) =>
 
 const newCode = () => String(crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000).padStart(6, "0");
 
-async function sendEmail(env: AuthEnv, fetchImpl: typeof fetch, to: string, code: string, purpose: "verify" | "reset", language: LanguageCode) {
+export interface OutgoingEmail {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}
+
+export const emailConfigured = (env: AuthEnv) => !!(env.GMAIL_USER && env.GMAIL_APP_PASSWORD) || !!(env.BREVO_API_KEY && env.MAIL_FROM);
+
+function buildEmail(to: string, code: string, purpose: "verify" | "reset", language: LanguageCode): OutgoingEmail {
   const t = EMAIL_TEXTS[language] ?? EMAIL_TEXTS.en;
   const lead = purpose === "verify" ? t.verifyLead : t.resetLead;
-  const subject = t.subject.replace("{code}", code);
-  const text = `${lead}\n\n${code}\n\n${t.validity}\n${t.ignore}\n\nDilo`;
-  const html = `<div style="font-family:Georgia,serif;color:#292524;max-width:480px">
+  return {
+    to,
+    subject: t.subject.replace("{code}", code),
+    text: `${lead}\n\n${code}\n\n${t.validity}\n${t.ignore}\n\nDilo`,
+    html: `<div style="font-family:Georgia,serif;color:#292524;max-width:480px">
 <p>${lead}</p>
 <p style="font-size:32px;letter-spacing:6px;font-weight:bold;margin:24px 0">${code}</p>
 <p>${t.validity}</p><p style="color:#78716c">${t.ignore}</p>
-<p style="color:#78716c">Dilo</p></div>`;
+<p style="color:#78716c">Dilo</p></div>`,
+  };
+}
+
+/** Sends through Gmail (app password) when configured, otherwise through Brevo's API. */
+async function deliver(env: AuthEnv, fetchImpl: typeof fetch, mail: OutgoingEmail) {
+  if (env.GMAIL_USER && env.GMAIL_APP_PASSWORD) {
+    const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: env.GMAIL_USER, pass: env.GMAIL_APP_PASSWORD } });
+    await transporter.sendMail({ from: `"Dilo" <${env.GMAIL_USER}>`, to: mail.to, subject: mail.subject, text: mail.text, html: mail.html });
+    return;
+  }
   const res = await fetchImpl(`${(env.BREVO_BASE_URL || "https://api.brevo.com").replace(/\/$/, "")}/v3/smtp/email`, {
     method: "POST",
     headers: { "api-key": env.BREVO_API_KEY!, "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ sender: { name: "Dilo", email: env.MAIL_FROM }, to: [{ email: to }], subject, textContent: text, htmlContent: html }),
+    body: JSON.stringify({ sender: { name: "Dilo", email: env.MAIL_FROM }, to: [{ email: mail.to }], subject: mail.subject, textContent: mail.text, htmlContent: mail.html }),
   });
   if (!res.ok) {
     console.error("Email provider error", res.status, (await res.text()).slice(0, 200));
@@ -226,7 +253,7 @@ export async function handleAuth(
   request: Request,
   env: AuthEnv,
   fetchImpl: typeof fetch = fetch,
-  options: { store?: Store; rateLimit?: boolean } = {},
+  options: { store?: Store; rateLimit?: boolean; send?: (mail: OutgoingEmail) => Promise<void> } = {},
 ): Promise<Response> {
   if (request.method !== "POST") return fail("bad_request");
   if (Number(request.headers.get("content-length") ?? 0) > 10_000) return fail("bad_request");
@@ -261,8 +288,8 @@ export async function handleAuth(
       case "send-code": {
         const purpose = body.purpose === "reset" ? "reset" : body.purpose === "verify" ? "verify" : null;
         if (!purpose) return fail("bad_request");
-        if (!env.BREVO_API_KEY || !env.MAIL_FROM) {
-          console.error("Email not configured (BREVO_API_KEY / MAIL_FROM)");
+        if (!options.send && !emailConfigured(env)) {
+          console.error("Email not configured (GMAIL_USER / GMAIL_APP_PASSWORD)");
           return fail("not_configured");
         }
         const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
@@ -279,8 +306,10 @@ export async function handleAuth(
         await store.set(`dilo:auth:code:${purpose}:${emailHash}`, JSON.stringify({ hash: await hmac(secret, "code", `${emailHash}:${code}`), attempts: 0 }), { ex: CODE_TTL_S });
         const language = LANGUAGE_CODES.includes(body.language as never) ? (body.language as LanguageCode) : "en";
         try {
-          await sendEmail(env, fetchImpl, email, code, purpose, language);
-        } catch {
+          const mail = buildEmail(email, code, purpose, language);
+          await (options.send ? options.send(mail) : deliver(env, fetchImpl, mail));
+        } catch (e) {
+          console.error("Email sending failed", e instanceof Error ? e.message : e);
           return fail("busy");
         }
         return json(200, { ok: true });
