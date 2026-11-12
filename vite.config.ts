@@ -8,7 +8,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite';
  * so the AI key stays on the server in both environments.
  */
 function devApi(env: Record<string, string>): Plugin {
-  let devStore: unknown = null; // one in-memory auth store for the whole dev session
+  let devStore: unknown = null; // one in-memory store (auth codes, chat sessions) for the whole dev session
   return {
     name: 'dilo-dev-api',
     configureServer(server) {
@@ -35,11 +35,13 @@ function devApi(env: Record<string, string>): Plugin {
 
       server.middlewares.use('/api/chat', async (req, res) => {
         const { handleRequest } = await server.ssrLoadModule('/server/chat.ts');
+        const { memoryStore } = await server.ssrLoadModule('/server/store.ts');
+        devStore ??= env.KV_REST_API_URL ? null : memoryStore();
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(chunk as Buffer);
         const request = new Request('http://localhost/api/chat', {
           method: req.method,
-          headers: { 'content-type': 'application/json' },
+          headers: { 'content-type': 'application/json', 'x-dilo-session': String(req.headers['x-dilo-session'] ?? '') },
           body: req.method === 'POST' ? Buffer.concat(chunks) : undefined,
         });
         const response: Response = await handleRequest(request, {
@@ -50,7 +52,7 @@ function devApi(env: Record<string, string>): Plugin {
           AI_TOKEN_BUDGET: env.AI_TOKEN_BUDGET ?? 'off',
           KV_REST_API_URL: env.KV_REST_API_URL,
           KV_REST_API_TOKEN: env.KV_REST_API_TOKEN,
-        }, fetch, { rateLimit: false }); // local development only; production always rate limits
+        }, fetch, { ...(devStore ? { store: devStore } : {}), rateLimit: false }); // local development only; production always rate limits
         res.statusCode = response.status;
         response.headers.forEach((value, key) => res.setHeader(key, value));
         if (!response.body) return void res.end();

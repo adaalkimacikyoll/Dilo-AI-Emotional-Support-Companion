@@ -4,7 +4,34 @@ import { LIMITS } from "../src/lib/chat-types";
 import { detectCrisis, detectHarmToOthers } from "../src/lib/crisisDetect";
 import { hasPlaceholders, LEGAL } from "../src/lib/legal";
 import { cleanReply, extractCrisis, getSystemInstruction } from "../src/lib/prompt";
-import { buildMessages, classifyStatus, DEFAULT_MODEL, DEFAULT_TOKEN_BUDGET, handleRequest, tokenBudget, parseChatRequest, resetRateLimits, sseToText } from "../server/chat";
+import {
+  buildMessages,
+  classifyStatus,
+  DEFAULT_MODEL,
+  DEFAULT_TOKEN_BUDGET,
+  handleRequest as rawHandleRequest,
+  isValidSession,
+  issueSession,
+  tokenBudget,
+  parseChatRequest,
+  resetRateLimits,
+  SESSION_HEADER,
+  SESSION_TTL_MS,
+  SHARED_LIMITS,
+  sseToText,
+} from "../server/chat";
+import { CONSENT_VERSION } from "../src/lib/operator";
+import { memoryStore, serverSecret, type Store } from "../server/store";
+
+// Every handler test runs against a fresh in-memory store and, unless it says otherwise, with a valid session token.
+let store: Store = memoryStore();
+const handleRequest = async (request: Request, env: Parameters<typeof rawHandleRequest>[1], fetchImpl?: typeof fetch, options: { session?: boolean; rateLimit?: boolean } = {}) => {
+  const { session = true, ...rest } = options;
+  const headers = new Headers(request.headers);
+  if (session && request.method === "POST") headers.set(SESSION_HEADER, (await issueSession(await serverSecret(store))).token);
+  const body = request.method === "POST" ? await request.text() : undefined;
+  return rawHandleRequest(new Request(request.url, { method: request.method, headers, body }), env, fetchImpl, { store, ...rest });
+};
 
 const valid = {
   history: [
@@ -17,7 +44,10 @@ const valid = {
   mood: "stressed",
 };
 
-beforeEach(() => resetRateLimits());
+beforeEach(() => {
+  resetRateLimits();
+  store = memoryStore();
+});
 
 // ---------- prompt ----------
 
@@ -315,6 +345,55 @@ describe("handleRequest", () => {
     expect(limited.status).toBe(429);
     expect((await handleRequest(post(valid, "8.8.8.8"), env, fetchImpl)).status).toBe(200);
   });
+
+  it("only answers requests with a valid session token", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async () => new Response(sse(delta("ok")), { status: 200 }));
+    const response = await handleRequest(post(valid), env, fetchImpl, { session: false });
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ ok: false, error: "session_required" });
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("gives a session token only for the current consent version and an adult", async () => {
+    const ask = (consent: unknown) => handleRequest(post({ action: "session", consent }), env, undefined, { session: false });
+    expect((await ask(undefined)).status).toBe(400);
+    expect((await ask({ version: CONSENT_VERSION - 1, adult: true })).status).toBe(400);
+    expect((await ask({ version: CONSENT_VERSION, adult: false })).status).toBe(400);
+    const ok = await ask({ version: CONSENT_VERSION, adult: true });
+    expect(ok.status).toBe(200);
+    const { token } = await ok.json();
+    expect(await isValidSession(await serverSecret(store), token)).toBe(true);
+  });
+
+  it("rejects forged, expired and other-version session tokens", async () => {
+    const secret = await serverSecret(store);
+    const { token, expires } = await issueSession(secret);
+    expect(await isValidSession(secret, token.slice(0, -1) + (token.endsWith("0") ? "1" : "0"))).toBe(false);
+    expect(await isValidSession(secret, token, expires + 1)).toBe(false);
+    expect(await isValidSession(secret, `${Date.now() + SESSION_TTL_MS * 2}.${"0".repeat(64)}`)).toBe(false);
+    expect(await isValidSession(crypto.getRandomValues(new Uint8Array(32)), token)).toBe(false);
+    expect(await isValidSession(secret, null)).toBe(false);
+  });
+
+  it("limits a client across server instances with the shared store", async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(async () => new Response(sse(delta("ok")), { status: 200 }));
+    for (let i = 0; i < SHARED_LIMITS.perIpPerMinute; i++) {
+      resetRateLimits(); // a new instance each time: only the shared counter remembers
+      expect((await handleRequest(post(valid, "7.7.7.7"), env, fetchImpl)).status).toBe(200);
+    }
+    resetRateLimits();
+    expect((await handleRequest(post(valid, "7.7.7.7"), env, fetchImpl)).status).toBe(429);
+  });
+
+  it("fails closed when the shared store is unavailable", async () => {
+    const broken: Store = { ...memoryStore(), incr: async () => { throw new Error("down"); } };
+    await serverSecret(broken);
+    const headers = { "content-type": "application/json", [SESSION_HEADER]: "x" };
+    const fetchImpl = vi.fn<typeof fetch>();
+    const res = await rawHandleRequest(new Request("http://localhost/api/chat", { method: "POST", headers, body: JSON.stringify({ action: "session", consent: { version: CONSENT_VERSION, adult: true } }) }), env, fetchImpl, { store: broken });
+    expect(res.status).toBe(503);
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
 });
 
 // ---------- legal ----------
@@ -376,7 +455,10 @@ describe("free-token budget", () => {
     return { state, fetchImpl };
   }
 
-  beforeEach(() => resetRateLimits());
+  beforeEach(() => {
+  resetRateLimits();
+  store = memoryStore();
+});
 
   it("defaults to 900k and can be turned off", () => {
     expect(tokenBudget({})).toBe(DEFAULT_TOKEN_BUDGET);
@@ -438,7 +520,10 @@ describe("server files load on Vercel", () => {
 describe("reasoning is turned off", () => {
   const post = () =>
     new Request("http://localhost/api/chat", { method: "POST", headers: { "content-type": "application/json", "x-forwarded-for": "6.6.6.6" }, body: JSON.stringify({ history: [{ role: "user", text: "Hi" }], language: "en", mode: "friendly", support: "tips", mood: null }) });
-  beforeEach(() => resetRateLimits());
+  beforeEach(() => {
+  resetRateLimits();
+  store = memoryStore();
+});
 
   it("asks the model not to think", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockResolvedValue(new Response(sse(delta("Hey")), { status: 200 }));

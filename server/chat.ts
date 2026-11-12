@@ -1,6 +1,8 @@
 import { LANGUAGE_CODES, LIMITS, MODES, MOOD_IDS, SUPPORT_STYLES, type ChatErrorKind, type ChatRequest, type ChatTurn } from "../src/lib/chat-types.js";
 import { getSystemInstruction } from "../src/lib/prompt.js";
 import { detectHarmToOthers } from "../src/lib/crisisDetect.js";
+import { CONSENT_VERSION } from "../src/lib/operator.js";
+import { createStore, hmac, sameText, serverSecret, type Store, type StoreEnv } from "./store.js";
 
 /**
  * Dilo's chat endpoint. It forwards the conversation to an OpenAI-compatible model API hosted in the EU
@@ -8,17 +10,12 @@ import { detectHarmToOthers } from "../src/lib/crisisDetect.js";
  * Nothing is stored here: no database, no logging of message content.
  */
 
-export interface ChatEnv {
+export interface ChatEnv extends StoreEnv {
   AI_API_KEY?: string;
   AI_BASE_URL?: string;
   AI_MODEL?: string;
   /** Total tokens Dilo may ever use (default 900,000, under Scaleway's 1,000,000 free tokens). "off" removes the limit. */
   AI_TOKEN_BUDGET?: string;
-  /** Shared counter (Upstash Redis via the Vercel Marketplace sets the KV_* names). */
-  KV_REST_API_URL?: string;
-  KV_REST_API_TOKEN?: string;
-  UPSTASH_REDIS_REST_URL?: string;
-  UPSTASH_REDIS_REST_TOKEN?: string;
 }
 
 export const DEFAULT_BASE_URL = "https://api.scaleway.ai/v1";
@@ -70,10 +67,12 @@ export function buildMessages(request: ChatRequest) {
 }
 
 // ---------- rate limiting ----------
-// Best effort, per server instance. Add a Vercel Firewall rate-limit rule for stronger protection.
+// Two layers: a quick in-memory check per server instance, then shared counters in Redis that hold across
+// all instances (per IP per minute and per day). IPs are only kept as keyed hashes, for at most a day.
 
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 15;
+export const SHARED_LIMITS = { perIpPerMinute: 15, perIpPerDay: 300, sessionsPerIpPerHour: 30 };
 const hits = new Map<string, number[]>();
 
 export function isRateLimited(key: string, now = Date.now()) {
@@ -85,6 +84,31 @@ export function isRateLimited(key: string, now = Date.now()) {
 }
 
 export const resetRateLimits = () => hits.clear();
+
+// ---------- chat sessions ----------
+// /api/chat only answers requests that carry a short-lived token, which the app gets by confirming the
+// current consent version. Visitors can't skip the consent screen by calling the API directly from a
+// normal page. (A determined script can still ask for a token, like any public web app; the shared rate
+// limits and the token budget are what keep that harmless.)
+
+export const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
+export const SESSION_HEADER = "x-dilo-session";
+
+export async function issueSession(secret: Uint8Array, now = Date.now()) {
+  const expires = now + SESSION_TTL_MS;
+  return { token: `${expires}.${await hmac(secret, "chat-session", `${expires}:${CONSENT_VERSION}`)}`, expires };
+}
+
+export async function isValidSession(secret: Uint8Array, token: string | null, now = Date.now()) {
+  const match = token?.match(/^(\d{13})\.([0-9a-f]{64})$/);
+  if (!match) return false;
+  const expires = Number(match[1]);
+  if (expires < now || expires > now + SESSION_TTL_MS) return false;
+  return sameText(match[2], await hmac(secret, "chat-session", `${expires}:${CONSENT_VERSION}`));
+}
+
+const isConsentClaim = (v: unknown) =>
+  !!v && typeof v === "object" && (v as Record<string, unknown>).version === CONSENT_VERSION && (v as Record<string, unknown>).adult === true;
 
 // ---------- token budget ----------
 // Keeps Dilo inside the provider's free tokens: once the budget is used up, the server stops calling the model
@@ -194,6 +218,9 @@ const STATUS: Record<ChatErrorKind, number> = {
 
 const fail = (error: ChatErrorKind) =>
   Response.json({ ok: false, error }, { status: STATUS[error], headers: { "Cache-Control": "no-store" } });
+/** The app answers this by getting a new session token and asking again. */
+const sessionRequired = () =>
+  Response.json({ ok: false, error: "session_required" }, { status: 401, headers: { "Cache-Control": "no-store" } });
 
 export function classifyStatus(status: number): ChatErrorKind {
   if (status === 401 || status === 403 || status === 404) return "not_configured";
@@ -207,13 +234,14 @@ export async function handleRequest(
   request: Request,
   env: ChatEnv,
   fetchImpl: typeof fetch = fetch,
-  options: { rateLimit?: boolean } = {},
+  options: { rateLimit?: boolean; store?: Store } = {},
 ): Promise<Response> {
   if (request.method !== "POST") return fail("bad_request");
   if (Number(request.headers.get("content-length") ?? 0) > 200_000) return fail("bad_request");
 
-  const clientKey = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
-  if (options.rateLimit !== false && isRateLimited(clientKey)) return fail("rate_limited");
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
+  const limit = options.rateLimit !== false; // off only in local development
+  if (limit && isRateLimited(ip)) return fail("rate_limited");
 
   let body: unknown;
   try {
@@ -221,6 +249,47 @@ export async function handleRequest(
   } catch {
     return fail("bad_request");
   }
+
+  const store = options.store ?? createStore(env, fetchImpl);
+  if (!store) {
+    console.error("Store not configured (KV_REST_API_URL / KV_REST_API_TOKEN)");
+    return fail("not_configured");
+  }
+  let secret: Uint8Array;
+  try {
+    secret = await serverSecret(store);
+  } catch (e) {
+    console.error("Store error", e);
+    return fail("busy");
+  }
+  const ipHash = await hmac(secret, "ip", ip);
+
+  // Session token, given only for the current consent version.
+  if (body && typeof body === "object" && (body as Record<string, unknown>).action === "session") {
+    if (!isConsentClaim((body as Record<string, unknown>).consent)) return fail("bad_request");
+    try {
+      if (limit && (await store.incr(`dilo:chat:rl:session:${ipHash}`, 3600)) > SHARED_LIMITS.sessionsPerIpPerHour) return fail("rate_limited");
+    } catch (e) {
+      console.error("Store error", e);
+      return fail("busy");
+    }
+    return Response.json({ ok: true, ...(await issueSession(secret)) }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  if (!(await isValidSession(secret, request.headers.get(SESSION_HEADER)))) return sessionRequired();
+
+  if (limit) {
+    try {
+      const minute = Math.floor(Date.now() / 60_000);
+      const day = new Date().toISOString().slice(0, 10);
+      if ((await store.incr(`dilo:chat:rl:m:${ipHash}:${minute}`, 120)) > SHARED_LIMITS.perIpPerMinute) return fail("rate_limited");
+      if ((await store.incr(`dilo:chat:rl:d:${ipHash}:${day}`, 26 * 3600)) > SHARED_LIMITS.perIpPerDay) return fail("rate_limited");
+    } catch (e) {
+      console.error("Store error", e);
+      return fail("busy"); // fail closed, like the token budget
+    }
+  }
+
   const chat = parseChatRequest(body);
   if (!chat) return fail("bad_request");
   // A conversation in which the user stated an intent to hurt someone is closed for good; the app never sends one,

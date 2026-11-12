@@ -1,3 +1,4 @@
+import { CONSENT_VERSION } from "./operator";
 import { LIMITS, type ChatErrorKind, type ChatRequest, type ChatTurn, type LanguageCode } from "./chat-types";
 import { cleanReply, extractCrisis } from "./prompt";
 
@@ -91,16 +92,40 @@ export async function chatWithDilo(request: ChatRequest, onText: (text: string) 
   }
 }
 
+// Short-lived token from the server, given for the current consent version. Kept in memory only.
+let session: { token: string; expires: number } | null = null;
+
+async function getSession(fresh = false): Promise<string> {
+  if (!fresh && session && session.expires - Date.now() > 60_000) return session.token;
+  session = null;
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "session", consent: { version: CONSENT_VERSION, adult: true } }),
+  });
+  const data = (await response.json().catch(() => ({}))) as { token?: string; expires?: number; error?: ChatErrorKind };
+  if (!response.ok || typeof data.token !== "string" || typeof data.expires !== "number") {
+    throw new ChatError(data.error ?? (response.status === 429 ? "rate_limited" : "generation_failed"));
+  }
+  session = { token: data.token, expires: data.expires };
+  return session.token;
+}
+
 async function requestOnce(request: ChatRequest, onText: (text: string) => void): Promise<{ text: string; crisis: boolean; harm: boolean }> {
+  const send = async (fresh: boolean) =>
+    fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Dilo-Session": await getSession(fresh) },
+      body: JSON.stringify({ ...request, history: trimHistory(request.history) }),
+    });
 
   let response: Response;
   try {
-    response = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...request, history: trimHistory(request.history) }),
-    });
-  } catch {
+    response = await send(false);
+    // The token expired or the server's secret changed: get a new one and ask once more.
+    if (response.status === 401) response = await send(true);
+  } catch (err) {
+    if (err instanceof ChatError) throw err;
     throw new ChatError("network");
   }
 

@@ -80,7 +80,7 @@ Wir speichern und protokollieren keine Nachrichteninhalte. Scaleway verwendet di
 
 Da deine Nachrichten Angaben zu deiner Gesundheit enthalten können, erfolgt die Verarbeitung auf Grundlage deiner ausdrücklichen Einwilligung (Art. 9 Abs. 2 lit. a i. V. m. Art. 6 Abs. 1 lit. a DSGVO), die du beim Start erteilst und jederzeit widerrufen kannst. Scaleway ist als Auftragsverarbeiter nach Art. 28 DSGVO tätig; die Verarbeitung findet in der EU statt. Es findet keine automatisierte Entscheidungsfindung im Sinne von Art. 22 DSGVO statt.
 
-Zum Schutz vor Missbrauch wird die IP-Adresse kurzzeitig im Arbeitsspeicher verwendet, um die Anzahl der Anfragen zu begrenzen (Art. 6 Abs. 1 lit. f DSGVO); sie wird nicht dauerhaft gespeichert.
+Zum Schutz vor Missbrauch wird die Anzahl der Anfragen begrenzt (Art. 6 Abs. 1 lit. f DSGVO). Dafür wird die IP-Adresse kurz im Arbeitsspeicher verwendet und in der Datenbank bei Upstash (Frankfurt, EU) nur als pseudonymisierter Schlüssel (HMAC) mit einem Zähler gespeichert, der spätestens nach etwa einem Tag automatisch gelöscht wird. Nach der Zustimmung erhält die App außerdem ein kurzlebiges, signiertes Sitzungstoken (12 Stunden gültig), das nur im Arbeitsspeicher des Browsers liegt und keine personenbezogenen Daten enthält.
 
 ## 7. Keine Weitergabe an weitere Dritte
 
@@ -219,7 +219,7 @@ We do not store or log message content. Scaleway does not use the content to tra
 
 Because your messages may contain information about your health, they are processed on the basis of your explicit consent (Art. 9(2)(a) in conjunction with Art. 6(1)(a) GDPR), which you give at the start and can withdraw at any time. Scaleway acts as a processor under Art. 28 GDPR; processing takes place in the EU. No automated decision-making within the meaning of Art. 22 GDPR takes place.
 
-To prevent abuse, your IP address is used briefly in memory to limit the number of requests (Art. 6(1)(f) GDPR); it is not stored permanently.
+To prevent abuse, the number of requests is limited (Art. 6(1)(f) GDPR). For this, your IP address is used briefly in memory and stored in the Upstash database (Frankfurt, EU) only as a pseudonymised key (HMAC) with a counter that is deleted automatically after about one day at the latest. After you consent, the app also receives a short-lived signed session token (valid for 12 hours) that is kept only in the browser's memory and contains no personal data.
 
 ## 7. No sharing with other third parties
 

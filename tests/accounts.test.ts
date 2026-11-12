@@ -158,3 +158,17 @@ describe("password reset with the emailed key", () => {
     expect(reset.vault.conversations).toHaveLength(1);
   });
 });
+
+describe("plain data from before accounts", () => {
+  it("is moved into the vault of whoever signs in and never left readable", async () => {
+    await createAccount("ada@example.com", "Secret-pass1");
+    const note = { id: "n-legacy", text: "old note", createdAt: 1, updatedAt: 1 };
+    localStorage.setItem("dilo.notes", JSON.stringify([note]));
+    localStorage.setItem("dilo.mood", JSON.stringify("tired"));
+    const session = await signIn("ada@example.com", "Secret-pass1");
+    expect(session.vault.notes).toEqual([note]);
+    expect(localStorage.getItem("dilo.notes")).toBeNull();
+    expect(localStorage.getItem("dilo.mood")).toBeNull();
+    expect((await signIn("ada@example.com", "Secret-pass1")).vault.notes).toEqual([note]);
+  });
+});

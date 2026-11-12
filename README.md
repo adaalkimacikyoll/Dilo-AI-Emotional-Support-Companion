@@ -4,7 +4,7 @@
 ![React](https://img.shields.io/badge/react-19-61DAFB?logo=react)
 ![Vite](https://img.shields.io/badge/vite-6-646CFF?logo=vite)
 ![Tailwind CSS](https://img.shields.io/badge/tailwind-4-06B6D4?logo=tailwindcss)
-![Tests](https://img.shields.io/badge/tests-140_passing-2E7D32)
+![Tests](https://img.shields.io/badge/tests-148_passing-2E7D32)
 ![AI](https://img.shields.io/badge/AI-EU--hosted-5A4FCF)
 
 **Dilo is a private AI companion for emotional wellbeing.** It listens without judgement, talks like a warm friend or uses methods from psychology, keeps an encrypted journal on your device, and points you to real, human help the moment a conversation signals risk.
@@ -57,7 +57,7 @@ flowchart LR
     V[("Encrypted vault<br/>AES-256-GCM in localStorage")]
   end
   subgraph Vercel["Vercel Function · Frankfurt"]
-    API["/api/chat<br/>validate · rate limit · system prompt"]
+    API["/api/chat<br/>session token · validate · rate limit · system prompt"]
   end
   KV[("Token counter<br/>Upstash Redis · Frankfurt")]
   AI["Gemma 4<br/>Scaleway Generative APIs · Paris"]
@@ -81,6 +81,8 @@ Only the current conversation leaves the device, and only to generate a reply. N
 
 **Prompting for two distinct voices.** The system prompt is assembled from mode, support style, mood and language, with explicit rules against stock phrases, repetition and unrequested advice. Real-model testing showed that small models copy example sentences and that hidden reasoning could use up the whole reply budget on long messages, so examples were removed, reasoning is disabled, and near-duplicate replies are detected and regenerated. (`src/lib/prompt.ts`, `src/lib/api.ts`)
 
+**Defence in depth for a public endpoint.** `/api/chat` answers only requests that carry a short-lived token signed by the server (HMAC, 12 hours), which the app receives by confirming the current consent version, so the consent screen can't be skipped from a normal page. Requests are limited per instance in memory and across all instances in Redis (per IP per minute and per day, IPs stored only as keyed hashes), and every page is served with a strict Content-Security-Policy (`script-src 'self'`, no third-party origins). (`server/chat.ts`, `server/store.ts`, `vercel.json`)
+
 **Streaming end to end.** The function converts the provider's SSE stream into a plain-text stream, and the UI follows new text only while the user is at the bottom, so scrolling up to reread is never interrupted.
 
 ## Tech stack
@@ -94,14 +96,15 @@ Only the current conversation leaves the device, and only to generate a reply. N
 | Storage | Encrypted vaults in `localStorage`; token counter, email codes and key copies in Upstash Redis (Frankfurt) |
 | Email | Gmail via nodemailer (codes in 8 languages); Brevo API as an alternative |
 | Crypto | Web Crypto API (PBKDF2-SHA-256, AES-256-GCM) |
-| Tests | Vitest (140 unit tests) |
+| Tests | Vitest (148 unit tests) |
 
 ## Project structure
 
 ```
 api/chat.ts                 Vercel Function entry point
-server/chat.ts              validation, rate limiting, token budget, provider call, streaming
+server/chat.ts              session tokens, validation, rate limiting, token budget, provider call, streaming
 server/auth.ts              email codes, key copies for password reset, rate limits
+server/store.ts             Redis/memory store and server secret shared by both endpoints
 src/App.tsx                 consent → account → chat / journal
 src/components/             ChatMessage, Composer, JournalView, AccountGate, EmailResetSetup, DailyCard, ...
 src/lib/prompt.ts           system prompt, safety markers

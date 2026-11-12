@@ -101,6 +101,29 @@ function readLegacyVault(): Vault | null {
 
 export const hasLegacyData = () => readLegacyVault() !== null;
 
+/**
+ * Moves plain (unencrypted) data from before accounts into the vault of whoever signs in, then removes it,
+ * so nothing readable is ever left behind in localStorage.
+ */
+async function absorbLegacy(session: Session): Promise<Session> {
+  const legacy = readLegacyVault();
+  if (legacy) {
+    const ids = new Set(session.vault.conversations.map((c) => c.id));
+    const vault: Vault = {
+      ...session.vault,
+      conversations: [...session.vault.conversations, ...legacy.conversations.filter((c) => !ids.has(c.id))],
+      entries: [...session.vault.entries, ...legacy.entries.filter((e) => !session.vault.entries.some((x) => x.id === e.id))],
+      notes: [...session.vault.notes, ...legacy.notes.filter((n) => !session.vault.notes.some((x) => x.id === n.id))],
+      mood: session.vault.mood ?? legacy.mood,
+    };
+    await saveVault(session, vault);
+    session = { ...session, vault };
+  }
+  // Also drops empty or unreadable leftovers.
+  LEGACY_KEYS.forEach((k) => localStorage.removeItem(k));
+  return session;
+}
+
 // ---------- data keys ----------
 
 const toBase64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
@@ -151,7 +174,7 @@ export async function createAccount(name: string, password: string): Promise<Ses
 
   saveAccounts([...listAccounts(), account]);
   await saveVault({ account, key: dataKey }, vault);
-  if (legacy) LEGACY_KEYS.forEach((k) => localStorage.removeItem(k));
+  LEGACY_KEYS.forEach((k) => localStorage.removeItem(k));
   return { account, key: dataKey, vault };
 }
 
@@ -170,7 +193,7 @@ export async function signIn(name: string, password: string): Promise<Session> {
   if (account.keys) {
     const dataKey = await importDataKey(fromBase64(await openWithKey<string>(passwordKey, account.keys.password)));
     const vault = sealed ? sanitizeVault(await openWithKey(dataKey, sealed)) : emptyVault();
-    return { account, key: dataKey, vault };
+    return absorbLegacy({ account, key: dataKey, vault });
   }
 
   // Accounts from before data keys: the vault was sealed with the password key itself.
@@ -181,7 +204,7 @@ export async function signIn(name: string, password: string): Promise<Session> {
   // Write the re-sealed vault before switching the account over, so a crash in between never locks the user out.
   localStorage.setItem(vaultKey(account.id), JSON.stringify(await sealWithKey(dataKey, vault)));
   replaceAccount(upgraded);
-  return { account: upgraded, key: dataKey, vault };
+  return absorbLegacy({ account: upgraded, key: dataKey, vault });
 }
 
 /**
