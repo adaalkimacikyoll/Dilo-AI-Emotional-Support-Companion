@@ -88,6 +88,8 @@ export interface Strings {
   lockWarning: string;
   password: string;
   repeatPassword: string;
+  showPassword: string;
+  hidePassword: string;
   passwordTooShort: string;
   passwordRuleLength: string;
   passwordRuleNumber: string;
@@ -271,6 +273,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "If you forget the password, the conversation can't be recovered.",
     password: "Password",
     repeatPassword: "Repeat password",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
     passwordTooShort: "The password must have at least 8 characters, including a number and a special character.",
     passwordRuleLength: "At least 8 characters",
     passwordRuleNumber: "At least one number (0–9)",
@@ -498,6 +502,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "Şifreyi unutursan sohbet geri getirilemez.",
     password: "Şifre",
     repeatPassword: "Şifreyi tekrar yaz",
+    showPassword: "Şifreyi göster",
+    hidePassword: "Şifreyi gizle",
     passwordTooShort: "Şifre en az 8 karakterden oluşmalı, bir rakam ve bir özel karakter içermeli.",
     passwordRuleLength: "En az 8 karakter",
     passwordRuleNumber: "En az bir rakam (0–9)",
@@ -725,6 +731,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "Wenn du das Passwort vergisst, lässt sich das Gespräch nicht wiederherstellen.",
     password: "Passwort",
     repeatPassword: "Passwort wiederholen",
+    showPassword: "Passwort anzeigen",
+    hidePassword: "Passwort verbergen",
     passwordTooShort: "Das Passwort braucht mindestens 8 Zeichen, darunter eine Zahl und ein Sonderzeichen.",
     passwordRuleLength: "Mindestens 8 Zeichen",
     passwordRuleNumber: "Mindestens eine Zahl (0–9)",
@@ -952,6 +960,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "Si vous oubliez le mot de passe, la conversation ne pourra pas être récupérée.",
     password: "Mot de passe",
     repeatPassword: "Répéter le mot de passe",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
     passwordTooShort: "Le mot de passe doit contenir au moins 8 caractères, dont un chiffre et un caractère spécial.",
     passwordRuleLength: "Au moins 8 caractères",
     passwordRuleNumber: "Au moins un chiffre (0–9)",
@@ -1179,6 +1189,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "Si olvidas la contraseña, la conversación no se podrá recuperar.",
     password: "Contraseña",
     repeatPassword: "Repite la contraseña",
+    showPassword: "Mostrar contraseña",
+    hidePassword: "Ocultar contraseña",
     passwordTooShort: "La contraseña debe tener al menos 8 caracteres, con un número y un carácter especial.",
     passwordRuleLength: "Al menos 8 caracteres",
     passwordRuleNumber: "Al menos un número (0–9)",
@@ -1406,6 +1418,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "إذا نسيت كلمة المرور فلا يمكن استعادة المحادثة.",
     password: "كلمة المرور",
     repeatPassword: "أعد كتابة كلمة المرور",
+    showPassword: "إظهار كلمة المرور",
+    hidePassword: "إخفاء كلمة المرور",
     passwordTooShort: "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل، وتتضمن رقمًا ورمزًا خاصًا.",
     passwordRuleLength: "8 أحرف على الأقل",
     passwordRuleNumber: "رقم واحد على الأقل (0–9)",
@@ -1633,6 +1647,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "اگر رمز را فراموش کنی، گفتگو قابل بازیابی نیست.",
     password: "رمز",
     repeatPassword: "تکرار رمز",
+    showPassword: "نمایش رمز",
+    hidePassword: "پنهان کردن رمز",
     passwordTooShort: "رمز باید حداقل ۸ کاراکتر داشته باشد و شامل یک عدد و یک نویسهٔ ویژه باشد.",
     passwordRuleLength: "حداقل ۸ کاراکتر",
     passwordRuleNumber: "حداقل یک عدد (0–9)",
@@ -1860,6 +1876,8 @@ export const TRANSLATIONS: Record<LanguageCode, Strings> = {
     lockWarning: "Αν ξεχάσεις τον κωδικό, η συζήτηση δεν μπορεί να ανακτηθεί.",
     password: "Κωδικός",
     repeatPassword: "Επανάληψη κωδικού",
+    showPassword: "Εμφάνιση κωδικού",
+    hidePassword: "Απόκρυψη κωδικού",
     passwordTooShort: "Ο κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες, μαζί με έναν αριθμό και έναν ειδικό χαρακτήρα.",
     passwordRuleLength: "Τουλάχιστον 8 χαρακτήρες",
     passwordRuleNumber: "Τουλάχιστον ένας αριθμός (0–9)",

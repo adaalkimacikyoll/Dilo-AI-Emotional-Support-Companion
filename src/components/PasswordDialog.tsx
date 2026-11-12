@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Lock } from "lucide-react";
 import { Dialog } from "./Dialog";
 import { isStrongPassword, WrongPasswordError } from "../lib/lock";
+import { PasswordInput } from "./PasswordInput";
 import { PasswordRules } from "./PasswordRules";
 import type { Strings } from "../lib/translations";
 
@@ -58,9 +59,9 @@ export function PasswordDialog({ t, open, mode, dir, onClose, onSubmit }: Props)
           <label htmlFor="lock-password" className="mb-1.5 block text-sm font-medium">
             {t.password}
           </label>
-          <input
+          <PasswordInput
+            t={t}
             id="lock-password"
-            type="password"
             autoFocus
             autoComplete={mode === "set" ? "new-password" : "current-password"}
             value={password}
@@ -76,9 +77,9 @@ export function PasswordDialog({ t, open, mode, dir, onClose, onSubmit }: Props)
             <label htmlFor="lock-password-repeat" className="mb-1.5 block text-sm font-medium">
               {t.repeatPassword}
             </label>
-            <input
+            <PasswordInput
+              t={t}
               id="lock-password-repeat"
-              type="password"
               autoComplete="new-password"
               value={repeat}
               onChange={(e) => setRepeat(e.target.value)}

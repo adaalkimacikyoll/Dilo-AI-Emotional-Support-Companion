@@ -15,6 +15,7 @@ import {
 import { AuthError, resetWithCode, saveResetKey, sendCode, verifyEmail } from "../lib/auth";
 import { LANGUAGES } from "../lib/api";
 import { isStrongPassword } from "../lib/lock";
+import { PasswordInput } from "./PasswordInput";
 import { PasswordRules } from "./PasswordRules";
 import type { LegalPage } from "../lib/legal";
 import type { LanguageCode, Strings } from "../lib/translations";
@@ -275,9 +276,9 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
               <label htmlFor="account-password" className="mb-1.5 block text-sm font-medium">
                 {mode === "reset" ? t.newPassword : t.password}
               </label>
-              <input
+              <PasswordInput
+                t={t}
                 id="account-password"
-                type="password"
                 autoComplete={askNewPassword ? "new-password" : "current-password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -293,7 +294,7 @@ export function AccountGate({ t, language, dir, onLanguageChange, onSession, onO
               <label htmlFor="account-repeat" className="mb-1.5 block text-sm font-medium">
                 {t.repeatPassword}
               </label>
-              <input id="account-repeat" type="password" autoComplete="new-password" value={repeat} onChange={(e) => setRepeat(e.target.value)} className={input} />
+              <PasswordInput t={t} id="account-repeat" autoComplete="new-password" value={repeat} onChange={(e) => setRepeat(e.target.value)} className={input} />
             </div>
           )}
 

@@ -109,8 +109,8 @@ function buildEmail(to: string, code: string, purpose: "verify" | "reset", langu
 /** Sends through Gmail (app password) when configured, otherwise through Brevo's API. */
 async function deliver(env: AuthEnv, fetchImpl: typeof fetch, mail: OutgoingEmail) {
   if (env.GMAIL_USER && env.GMAIL_APP_PASSWORD) {
-    const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: env.GMAIL_USER, pass: env.GMAIL_APP_PASSWORD } });
-    await transporter.sendMail({ from: `"Dilo" <${env.GMAIL_USER}>`, to: mail.to, subject: mail.subject, text: mail.text, html: mail.html });
+    const transporter = nodemailer.createTransport({ service: "gmail", auth: { user: env.GMAIL_USER.trim(), pass: env.GMAIL_APP_PASSWORD.replace(/\s+/g, "") } }); // app passwords are shown with spaces
+    await transporter.sendMail({ from: `"Dilo" <${env.GMAIL_USER.trim()}>`, to: mail.to, subject: mail.subject, text: mail.text, html: mail.html });
     return;
   }
   const res = await fetchImpl(`${(env.BREVO_BASE_URL || "https://api.brevo.com").replace(/\/$/, "")}/v3/smtp/email`, {
