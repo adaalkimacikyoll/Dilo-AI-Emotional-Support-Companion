@@ -2,7 +2,7 @@
  * Dilo service worker: makes the app installable and fast to open, and lets the journal open offline.
  * It never caches /api/ (chat messages and replies) or anything from other sites.
  */
-const CACHE = "dilo-v1";
+const CACHE = "dilo-v2";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
